@@ -1,5 +1,5 @@
 apiVersion: v2
-description: A Helm chart for Kubernetes ConfigMap and Secret Object in annuums Labs
+description: A Helm chart for Kubernetes ConfigMap and Secret Object in Annuums
 name: config-chart
 type: application
 version: 0.1.2
