@@ -1,4 +1,4 @@
-name: Build and Delivery to Docker Hub
+name: Build and Delivery to Google Artifact Registry
 
 on:
   release:
