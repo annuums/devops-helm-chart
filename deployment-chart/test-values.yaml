@@ -1,0 +1,165 @@
+fullnameOverride: pigeon
+namespace: pigeon
+
+restartPolicy: Always
+
+labels:
+  my-label: custom-label
+
+annotations:
+  argocd: hey
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 60
+
+
+service:
+  create: true
+  name: pigeon-service
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports": {"3000":{"name": "devops-default-be-test"}}}'
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+    - name: metric
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+
+serviceAccount:
+  create: true
+  exist: false
+  name: pigeon-sa
+  annotations:
+    iam.gke.io/gcp-service-account: pigeon-sa@annuums.iam.gserviceaccount.com
+    another-annotation: hello-world
+
+containers:
+  - name: pigeon-1
+    lifecycle:
+      preStop:
+        exec:
+          command:
+            - "sh"
+            - "-c"
+            - "sleep 30"
+      postStart:
+        exec:
+          command:
+            - "sh"
+    labels:
+      test-label: "pigeon-1"
+      test-label-another: "pigeon-another"
+    annotations:
+      test-annotatino-second: "pigeon-1-a"
+      test-annotatino-first: "pigeon-1-b"
+    image:
+      repository: first-rep
+      tag: 1.0.0
+    args:
+      - "while true; do sllep 30; done;"
+    command:
+      - "sh"
+      - "-c"
+    volumeMounts:
+      - name: hostpath-volume
+        mountPath: /foo
+        subPath: ./foo
+        readOnly: true
+    # Resource Default
+    # cpu: 250m
+    # memory: 128Mi
+    resources:
+      cpu: 250m
+      memory: 256Mi
+    ports:
+      - containerPort: 5050
+        protocol: TCP
+
+replicas: 1
+revisionHistoryLimit: 3
+
+nodeSelector:
+  type: applications
+  kubernetes.io/architecture: amd64
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 2
+  timeoutSeconds: 3
+
+livenessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 2
+  timeoutSeconds: 3
+
+volumes:
+  - name: hostpath-volume
+    hostPath:
+      path: /host-foo
+      # type: Directory | DirectoryOrCreate | File | FileOrCreate | Socket
+      type: Directory
+  - name: empty-volume
+    emptyDir:
+      sizeLimit: 500Mi
+  - name: secret-volume
+    secretVolume:
+      secretName: secr-volume
+  - name: configmap-volume
+    configMapVolume:
+      name: conf-volume
+  - name: pvc-volume
+    persistentVolumeClaim:
+      name: my-pvc-ref-name
+
+affinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    matchExpressions:
+      - key: pink-pigeon
+        operator: In
+        values:
+          - king
+          - queen
+tolerations:
+  - key: my-key
+    operator: Equal
+    value: my-value
+    effect: NoSchedule
+
+environment:
+  env:
+    - name: PORT
+      value: "3000"
+  secret:
+    - name: sec-env-name
+      ref:
+        name: secret-name
+        key: secret-key
+        optional: false
+  configmap:
+    - name: cm-env-name
+      ref:
+        name: configmap-name
+        key: configmap-key
+  envFrom:
+    - type: configmap
+      configMapRefName: special-config-name
+    - type: configmap
+      configMapRefName: another-config-name
+    - type: secret
+      secretRefName: secret-name
+    - type: secret
+      secretRefName: another-secret-name

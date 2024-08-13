@@ -1,0 +1,38 @@
+fullnameOverride: annuums-config
+appVersionSuffix: config-chart
+namespace: annuums-config
+
+configmap:
+  labels:
+    my-label: custom-label
+    cm-label: config-cm-0
+  annotations:
+    test-annotatino-second: "pigeon-1-a"
+    test-annotatino-first: "pigeon-1-b"
+  data:
+    # 속성과 비슷한 키; 각 키는 간단한 값으로 매핑됨
+    player_initial_lives: "3"
+    ui_properties_file_name: "user-interface.properties"
+
+    # 파일과 비슷한 키
+    game.properties: |
+      enemy.types=aliens,monsters
+      player.maximum-lives=5
+    user-interface.properties: |
+      color.good=purple
+      color.bad=yellow
+      allow.textmode=true
+
+secret:
+  labels:
+    my-label: custom-label
+    secret-label: config-sec-0
+  annotations:
+    test-annotatino-second: "pigeon-1-a"
+    test-annotatino-first: "pigeon-1-b"
+  type: Opaque
+  data:
+    USER_NAME: YWRtaW4=
+    PASSWORD: MWYyZDFlMmU2N2Rm
+  stringData:
+    HOST_NAME: https://example.com

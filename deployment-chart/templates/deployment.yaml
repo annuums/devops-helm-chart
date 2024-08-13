@@ -1,0 +1,238 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "annuums-deployment.fullname" . }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4}}
+  {{- end }}
+  labels:
+    {{- include "annuums-deployment.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ default 1 .Values.replicas }}
+  {{- end }}
+  revisionHistoryLimit: {{ default 3 .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      annuums.devops/name: {{ include "annuums-deployment.fullname" . }}-selector
+  template:
+    metadata:
+  {{- with .Values.containers }}
+    {{- range .}}
+      labels:
+        {{- include "annuums-deployment.labels" $ | nindent 8 }}
+        {{- if .labels }}
+          {{- toYaml .labels | nindent 8 }}
+        {{- end }}
+      {{- if .annotations }}
+      annotations:
+        {{- toYaml .annotations | nindent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+    spec:
+      {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        nodeAffinity:
+          {{- if .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            {{- with .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution.matchExpressions }}
+            {{- range . }}
+              - matchExpressions:
+                - key: {{ .key }}
+                  operator: {{ .operator }}
+                  values:
+                  {{- toYaml .values | nindent 20 }}
+              {{- end }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- with .Values.tolerations }}
+        {{- range . }}
+        - key: {{ .key }}
+          value: {{ .value | quote}}
+          operator: {{ .operator }}
+          effect: {{ .effect }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      restartPolicy: {{ default "Always" .Values.restartPolicy }}
+      containers:
+      {{- with .Values.containers }}
+        {{- range .}}
+        - name: {{ .name }}
+          image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
+          {{- if .lifecycle }}
+          lifecycle:
+            {{- if .lifecycle.preStop }}
+            preStop:
+              exec:
+                command:
+                {{- toYaml .lifecycle.preStop.exec.command | nindent 16 }}
+            {{- end }}
+            {{- if .lifecycle.postStart }}
+            postStart:
+              exec:
+                command:
+                {{- toYaml .lifecycle.postStart.exec.command | nindent 16 }}
+            {{- end }}
+          {{- end }}
+          {{- if .command }}
+          command:
+            {{- toYaml .command | nindent 12 }}
+          {{- end }}
+          {{- if .args }}
+          args:
+            {{- toYaml .args | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.environment }}
+          {{- if or .env .secret .configmap }}
+          env:
+            {{- if .env }}
+              {{- toYaml .env | nindent 12 }}
+            {{- end }}
+            {{- if .secret }}
+            {{- range .secret }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .ref.name }}
+                  key: {{ .ref.key }}
+                  optional: {{ default false .ref.optional }}
+            {{- end }}
+            {{- end }}
+            {{- if .configmap }}
+            {{- range .configmap }}
+            - name: {{ .name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .ref.name }}
+                  key: {{ .ref.key }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if .envFrom }}
+          envFrom:
+          {{- range .envFrom }}
+            {{- if eq .type "configmap" }}
+            - configMapRef:
+                name: {{ .configMapRefName }}
+            {{- end }}
+            {{- if eq .type "secret" }}
+            - secretRef:
+                name: {{ .secretRefName }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with .volumeMounts }}
+          volumeMounts:
+          {{- range . }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- end }}
+          resources:
+          {{- if .resources }}
+            requests:
+              cpu: {{ .resources.cpu }}
+              memory: {{ .resources.memory }}
+            limits:
+              cpu: {{ .resources.cpu }}
+              memory: {{ .resources.memory }}
+          {{- else }}
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          {{- end }}
+        {{- with .ports }}
+          ports:
+          {{- range .}}
+            - containerPort: {{ .containerPort }}
+              protocol: {{ .protocol }}
+          {{- end}}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ default "/" .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            {{- end }}
+            {{- if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- end }}
+            initialDelaySeconds: {{ default 5 .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 5 .Values.livenessProbe.periodSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ default 2 .Values.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ default 3 .Values.livenessProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ default "/" .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{- end }}
+            {{- if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- end }}
+            initialDelaySeconds: {{ default 5 .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 5 .Values.readinessProbe.periodSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ default 2 .Values.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ default 3 .Values.readinessProbe.timeoutSeconds }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- range . }}
+        - name: {{ .name }}
+          {{- if .hostPath }}
+          hostPath:
+            path: {{ .hostPath.path }}
+            type: {{ .hostPath.type }}
+          {{- end }}
+          {{- if .emptyDir }}
+          emptyDir:
+            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- end }}
+          {{- if .secretVolume }}
+          secret:
+            secretName: {{ .secretVolume.secretName }}
+          {{- end }}
+          {{- if .configMapVolume }}
+          configMap:
+            name: {{ .configMapVolume.name }}
+          {{- end }}
+          {{- if .persistentVolumeClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .persistentVolumeClaim.name }}
+          {{- end}}
+        {{- end }}
+      {{- end }}

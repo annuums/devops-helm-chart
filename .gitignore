@@ -1,0 +1,12 @@
+test.sh
+test-values-output.yaml
+
+**/test.sh
+**/test-values-output.yaml
+# helm charts
+*.tgz
+
+.idea
+.idea/**
+
+**/check.yaml

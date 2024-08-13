@@ -1,0 +1,100 @@
+name: Build and Delivery to Docker Hub
+
+on:
+  release:
+    types:
+      - currently-disabled
+
+## You can add alert logics if you need to notify the team about the release
+jobs:
+  extract-release-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      chart: ${{ steps.extract_info.outputs.chart }}
+      version: ${{ steps.extract_info.outputs.version }}
+    steps:
+      - name: Extract Release Information
+        id: extract_info
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}      
+          IFS='-' read -r CHART VERSION <<< "$TAG_NAME"
+          
+          temp_name="$CHART"
+          kebab_case_name=$(echo "$temp_name" | sed 's/\([A-Z]\)/-\1/g' | tr '[:upper:]' '[:lower:]')
+          chart_name="${kebab_case_name//_/-}"
+          
+          echo "chart=$chart_name" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Build will be triggered for chart $chart_name and version: $VERSION"
+
+  test-and-delivery:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      registry: registry-1.docker.io/annuums
+    permissions:
+      contents: "read"
+      id-token: "write"
+    needs:
+      - extract-release-tag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Get Chart Version"
+        if: steps.validate_chart.outputs.stop == ''
+        id: "get_chart_version"
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq '.version' ${{ needs.extract-release-tag.outputs.chart }}/Chart.yaml
+
+      - name: "Validate Charts"
+        id: "validate_chart"
+        run: |
+          validate_code=0
+          if [ "${{ steps.get_chart_version.outputs.result }}" != "${{ needs.extract-release-tag.outputs.version }}" ]; then
+            validate_code=2
+            echo "Inconsistency Version :: release version (${{ needs.extract-release-tag.outputs.version }}) and actual chart version (${{ steps.get_chart_version.outputs.result }}) is different."
+          else 
+            helm template ${{ needs.extract-release-tag.outputs.chart }} -f ${{ needs.extract-release-tag.outputs.chart }}/test-values.yaml > /dev/null || echo "stop=1" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "stop=$validate_code" >> $GITHUB_OUTPUT
+
+      - name: "Fail to validate"
+        if: steps.validate_chart.outputs.stop != '0'
+        run: |
+          echo "Workflow stops because fail to validate the chart ${{ needs.extract-release-tag.outputs.chart }}"
+          
+          exit ${{ steps.validate_chart.outputs.stop }}
+
+      - name: "Package Helm Chart"
+        id: "build_helm_chart"
+        run: |
+          package_result=$(helm package ${{ needs.extract-release-tag.outputs.chart }})
+          export HELM_EXPERIMENTAL_OCI=1
+
+          echo "package_name=${package_result##*/}" >> $GITHUB_OUTPUT
+
+      - name: "Authenticate to GCP"
+        id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.WORKLOAD_IDENTITY_SA }}
+          access_token_lifetime: "300s"
+
+      - name: "Login to GAR"
+        uses: docker/login-action@v3
+        with:
+          registry: asia-northeast3-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.auth_token }}
+
+      - name: "Push Helm Chart to GAR"
+        run: |
+          echo "Login to helm..."
+          gcloud auth application-default print-access-token | helm registry login -u oauth2accesstoken --password-stdin https://asia-northeast3-docker.pkg.dev
+          echo ${{ steps.build_helm_chart.outputs.package_name}}
+          helm push ${{ steps.build_helm_chart.outputs.package_name }} oci://${{ secrets.GAR_BASE_URL }}/${{ env.repository_name }}

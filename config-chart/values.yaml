@@ -1,0 +1,7 @@
+fullnameOverride: annuums-config
+appVersionSuffix: config-chart
+namespace: annuums-config
+
+configmap: {}
+
+secret: {}

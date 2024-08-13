@@ -1,0 +1,44 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ template "annuums-deployment.fullname" . }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  labels:
+    {{- include "annuums-deployment.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "annuums-deployment.fullname" . }}
+  minReplicas: {{ coalesce .Values.autoscaling.minReplicas .Values.replicas 1 }}
+  maxReplicas: {{ coalesce .Values.autoscaling.maxReplicas (mul .Values.replicas 2) 2 }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ default 60 .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ default 60 .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+    {{- if and (not .Values.autoscaling.targetCPUUtilizationPercentage) (not .Values.autoscaling.targetMemoryUtilizationPercentage) }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    {{- end }}
+{{- end }}

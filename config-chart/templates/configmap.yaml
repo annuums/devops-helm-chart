@@ -1,0 +1,18 @@
+{{- if .Values.configmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "annuums-config.fullname" . }}-cm
+  namespace: {{ template "annuums-config.namespace" . }}
+  labels:
+    {{- include "annuums-config.labels" . | nindent 4 }}
+    {{- if .Values.configmap.labels }}
+    {{- toYaml .Values.configmap.labels | nindent 4 }}
+    {{- end }}
+  {{- if .Values.configmap.annotations }}
+  annotations:
+    {{- toYaml .Values.configmap.annotations | nindent 4 }}
+  {{- end }}
+data:
+  {{- toYaml .Values.configmap.data | nindent 2 }}
+{{- end }}

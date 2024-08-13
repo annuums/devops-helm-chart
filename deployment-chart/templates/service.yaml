@@ -1,0 +1,23 @@
+{{- if and (.Values.service) (.Values.service.create) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  {{- if .Values.service.annotations }}
+  annotations:
+    {{- toYaml .Values.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.service.ports }}
+  ports:
+  {{- range .}}
+    - name: {{ .name }}
+      port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: {{ .protocol }}
+  {{- end }}
+  {{- end }}
+  selector:
+    annuums.devops/name: {{ template "annuums-deployment.fullname" . }}-selector
+{{- end }}

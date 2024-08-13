@@ -1,0 +1,110 @@
+fullnameOverride: annuums-cronjob
+appVersionSuffix: cronjob-chart
+namespace: annuums-cronjob
+
+serviceAccount:
+  create: true
+  exist: false
+  name: pigeon-cron-sa
+  annotations:
+    iam.gke.io/gcp-service-account: pigeon-sa@annuums.iam.gserviceaccount.com
+    another-annotation: hello-world
+
+labels:
+  my-label: custom-label
+  cronjob: batch-0
+
+cronjob:
+  name: pigeon-cron-job
+  schedule: "* * * * *"
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  containers:
+    - image:
+        repository: first-rep
+        tag: 1.0.0
+        pullPolicy: Never
+      labels:
+        test-label: "pigeon-1"
+        test-label-another: "pigeon-another"
+      annotations:
+        test-annotatino-second: "pigeon-1-a"
+        test-annotatino-first: "pigeon-1-b"
+      args:
+        - "while true; do sllep 30; done;"
+      command:
+        - "sh"
+        - "-c"
+      volumeMounts:
+        - name: hostpath-volume
+          mountPath: /foo
+          subPath: ./foo
+          readOnly: true
+      # Resource Default
+      # cpu: 250m
+      # memory: 128Mi
+      resources:
+        cpu: 250m
+        memory: 256Mi
+
+nodeSelector:
+  type: applications
+  kubernetes.io/architecture: amd64
+
+volumes:
+  - name: hostpath-volume
+    hostPath:
+      path: /host-foo
+      # type: Directory | DirectoryOrCreate | File | FileOrCreate | Socket
+      type: Directory
+  - name: empty-volume
+    emptyDir:
+      sizeLimit: 500Mi
+      path: /empty-foo
+  - name: secret-volume
+    secretVolume:
+      secretName: secr-volume
+  - name: configmap-volume
+    configMapVolume:
+      name: conf-volume
+
+affinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    matchExpressions:
+      - key: pink-pigeon
+        operator: In
+        values:
+          - king
+          - queen
+tolerations:
+  - key: my-key
+    operator: Equal
+    value: true
+    effect: NoSchedule
+
+environment:
+  env:
+    - name: PORT
+      value: "3000"
+  secret:
+    - name: sec-env-name
+      ref:
+        name: secret-name
+        key: secret-key
+        optional: false
+  configmap:
+    - name: cm-env-name
+      ref:
+        name: configmap-name
+        key: configmap-key
+  envFrom:
+    - type: configmap
+      configMapRefName: special-config-name
+    - type: configmap
+      configMapRefName: another-config-name
+    - type: secret
+      secretRefName: secret-name
+    - type: secret
+      secretRefName: another-secret-name

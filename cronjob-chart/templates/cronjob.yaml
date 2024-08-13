@@ -1,0 +1,176 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ template "annuums-cronjob.fullname" . }}
+  namespace: {{ template "annuums-cronjob.namespace" . }}
+  labels:
+    app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" . }}
+    {{- include "annuums-cronjob.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  successfulJobsHistoryLimit: {{ default 1 .Values.cronjob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 .Values.cronjob.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ default 0 .Values.cronjob.backoffLimit }}
+      activeDeadlineSeconds: {{ default 600 .Values.cronjob.activeDeadlineSeconds }}
+      template:
+        metadata:
+          {{- with .Values.cronjob.containers }}
+          {{- range .}}
+          labels:
+            app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" $ }}
+            {{- include "annuums-cronjob.labels" $ | nindent 12 }}
+            {{- if .labels }}
+              {{- toYaml .labels | nindent 12 }}
+            {{- end }}
+          {{- if .annotations }}
+          annotations:
+              {{- toYaml .annotations | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+        spec:
+          restartPolicy: {{ default "Never" .Values.cronjob.restartPolicy }}
+          {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
+          serviceAccountName: {{ .Values.serviceAccount.name }}
+          {{- end }}
+          {{- if .Values.nodeSelector }}
+          nodeSelector:
+          {{- toYaml .Values.nodeSelector | nindent 12 }}
+          {{- end }}
+          {{- if .Values.affinity }}
+          affinity:
+            nodeAffinity:
+              {{- if .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution }}
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                {{- with .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution.matchExpressions }}
+                {{- range . }}
+                  - matchExpressions:
+                    - key: {{ .key }}
+                      operator: {{ .operator }}
+                      values:
+                      {{- toYaml .values | nindent 24 }}
+                {{- end }}
+                {{- end }}
+              {{- end }}
+          {{- end }}
+          {{- if .Values.tolerations }}
+          tolerations:
+            {{- with .Values.tolerations }}
+            {{- range . }}
+            - key: {{ .key }}
+              value: {{ .value | quote }}
+              operator: {{ .operator }}
+              effect: {{ .effect }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          containers:
+          {{- with .Values.cronjob.containers }}
+            {{- range $index, $container := . }}
+            - name: {{ printf "%s-%d" $.Values.cronjob.name $index }}
+              image: {{ printf "%s:%s" $container.image.repository $container.image.tag | quote }}
+              imagePullPolicy: {{ default "IfNotPresent" $container.image.pullPolicy }}
+              {{- with $.Values.environment }}
+              {{- if or .env .secret .configmap }}
+              env:
+                {{- if .env }}
+                  {{- toYaml .env | nindent 16 }}
+                {{- end }}
+                {{- if .secret }}
+                {{- range .secret }}
+                - name: {{ .name }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .ref.name }}
+                      key: {{ .ref.key }}
+                      optional: {{ .ref.optional }}
+                {{- end }}
+                {{- end }}
+                {{- if .configmap }}
+                {{- range .configmap }}
+                - name: {{ .name }}
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .ref.name }}
+                      key: {{ .ref.key }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
+              {{- if .envFrom }}
+              envFrom:
+              {{- range .envFrom }}
+                {{- if eq .type "configmap" }}
+                - configMapRef:
+                    name: {{ .configMapRefName }}
+                {{- end }}
+                {{- if eq .type "secret" }}
+                - secretRef:
+                    name: {{ .secretRefName }}
+                {{- end }}
+              {{- end }}
+              {{- end }}
+              {{- end }}
+              {{- if $container.command }}
+              command:
+                {{- toYaml $container.command | nindent 16 }}
+              {{- end }}
+              {{- if $container.args }}
+              args:
+                {{- toYaml $container.args | nindent 16 }}
+              {{- end }}
+              {{- with $container.volumeMounts }}
+              volumeMounts:
+              {{- range . }}
+                - name: {{ .name }}
+                  mountPath: {{ .mountPath }}
+                  subPath: {{ .subPath }}
+                  readOnly: {{ .readOnly }}
+              {{- end }}
+              {{- end }}
+              resources:
+              {{- if $container.resources }}
+                requests:
+                  cpu: {{ $container.resources.cpu }}
+                  memory: {{ $container.resources.memory }}
+                limits:
+                  cpu: {{ $container.resources.cpu }}
+                  memory: {{ $container.resources.memory }}
+              {{- else }}
+                requests:
+                  cpu: 250m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 128Mi
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.volumes }}
+          volumes:
+            {{- range . }}
+            - name: {{ .name }}
+              {{- if .hostPath }}
+              hostPath:
+                path: {{ .hostPath.path }}
+                type: {{ .hostPath.type }}
+              {{- end }}
+              {{- if .emptyDir }}
+              emptyDir:
+                sizeLimit: {{ .emptyDir.sizeLimit }}
+              {{- end }}
+              {{- if .secretVolume }}
+              secret:
+                secretName: {{ .secretVolume.secretName }}
+              {{- end }}
+              {{- if .configMapVolume }}
+              configMap:
+                name: {{ .configMapVolume.name }}
+              {{- end }}
+            {{- end }}
+          {{- end }}

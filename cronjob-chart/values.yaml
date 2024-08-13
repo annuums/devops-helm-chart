@@ -1,0 +1,16 @@
+fullnameOverride: annuums-cronjob
+appVersionSuffix: cronjob-chart
+namespace: annuums-cronjob
+
+serviceAccount:
+  create: false
+
+labels: {}
+
+cronjob: {}
+
+affinity: {}
+tolerations: []
+nodeSelector: {}
+
+volumes: []

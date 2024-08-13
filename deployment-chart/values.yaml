@@ -1,0 +1,29 @@
+fullnameOverride: annuums-deployment
+appVersionSuffix: deployment-chart
+namespace: annuums-deployment
+
+serviceAccount:
+  create: false
+
+labels: {}
+
+autoscaling:
+  type: none # hpa | none
+
+containers: []
+
+replicas: 1
+revisionHistoryLimit: 3
+
+nodeSelector: {}
+
+ports: []
+
+startProbe: {}
+readinessProbe: {}
+livenessProbe: {}
+
+volumeMounts: []
+volumes: []
+affinity: {}
+tolerations: []
