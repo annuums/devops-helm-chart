@@ -2,4 +2,4 @@ apiVersion: v2
 description: A Helm chart for Kubernetes CronJob Object in Annuums
 name: cronjob-chart
 type: application
-version: 0.4.4
+version: 0.5.0
