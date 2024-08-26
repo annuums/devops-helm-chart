@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.5.0
+- Add labels for `annuums.orb/version: {{ chart-name }}-{{ chart-version }}`
+  - It will helps gaining observability
+
 ## 0.4.4
 - Fix service account annotation template
 - Fix duplicates; Add `exist` property
