@@ -4,6 +4,12 @@ kind: Service
 metadata:
   name: {{ .Values.service.name }}
   namespace: {{ template "annuums-deployment.namespace" . }}
+  labels:
+    annuums.obs/version: {{ template "annuums-deployment.chart" . }}
+    {{- include "annuums-deployment.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
   {{- if .Values.service.annotations }}
   annotations:
     {{- toYaml .Values.service.annotations | nindent 4 }}

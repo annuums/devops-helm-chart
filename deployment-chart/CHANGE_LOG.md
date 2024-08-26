@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.9.0
+- Add labels for `annuums.orb/version: {{ chart-name }}-{{ chart-version }}`
+  - It will helps gaining observability
+
 ## 0.8.0
 - Add LifeCycle Hook
 - Fix Annotation
