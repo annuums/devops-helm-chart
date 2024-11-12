@@ -9,7 +9,7 @@ gatewayClass:
   controller: my-gateway-controller
 
 gateway:
-  class: my-gateway
+  className: my-gateway-class
   name: my-gateway
   annotations: {}
   labels: {}

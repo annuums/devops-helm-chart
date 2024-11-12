@@ -14,7 +14,7 @@ metadata:
     {{- toYaml .Values.gateway.annotations | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ .Values.gateway.name }}
+  gatewayClassName: {{ .Values.gateway.className }}
   listeners:
     {{- with .Values.gateway.listeners }}
     {{- range . }}
