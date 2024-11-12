@@ -1,0 +1,9 @@
+fullnameOverride: annuums-gateway
+appVersionSuffix: gateway-chart
+namespace: annuums-gateway
+
+gatewayClass: {}
+
+gateway: {}
+
+httpRoutes: {}

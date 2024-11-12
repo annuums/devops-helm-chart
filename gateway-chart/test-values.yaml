@@ -1,0 +1,72 @@
+fullnameOverride: annuums-gateway
+appVersionSuffix: gateway-chart
+namespace: annuums-gateway
+
+gatewayClass:
+  name: my-gateway-class
+  annotations: {}
+  labels: {}
+  controller: my-gateway-controller
+
+gateway:
+  class: my-gateway-class
+  name: my-gateway
+  annotations: {}
+  labels: {}
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        matchLabels:
+          app: my-app
+          front: react
+    - name: https
+      port: 443
+      protocol: HTTPS
+
+httpRoutes:
+  name: my-http-route
+  annotations: {}
+  labels: {}
+  # You can add multiple parentRefs
+  # Usecase: 
+  parentRefs:
+    - name: my-gateway
+    - name: my-gateway-2
+  hostnames:
+    - example.com
+  rules:
+    # example.com/foo -> my-service:80
+    - matches:
+      - path:
+          type: Prefix
+          value: /foo
+      backendRefs:
+        - name: my-service
+          port: 80
+    # If you want to fine tune in details, you can add them here
+    - filters:
+      # http://example.com/foo -> https://example.com/foo
+      - type: RequestRedirect
+        requestRedirect:
+          scheme: https
+          statusCode: 301
+      # example.com/foo -> rew.example.com/bar
+      - type: URLRewrite
+        urlRewrite:
+          hostname: rew.example.com
+      # example.com/foo -> rew.example.com/bar
+      - type: URLRewrite
+        urlRewrite:
+          hostname: rew.example.com
+          path:
+            type: ReplaceFullPath
+            replaceFullPath: /bar
+      # example.com/foo/hello -> rew.example.com/bar/hello
+      - type: URLRewrite
+        urlRewrite:
+          hostname: rew.example.com
+          path:
+            type: ReplacePrefixMatch
+            replacePrefixMatch: /bar
