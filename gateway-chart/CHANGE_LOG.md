@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.5
+- fix: add missing `hostname` filed in listeners
+
 ## 0.0.4
 - fix: fix typo in template of Gateway object
   - class name to gateway.className

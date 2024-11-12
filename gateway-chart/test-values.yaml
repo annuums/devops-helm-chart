@@ -16,6 +16,7 @@ gateway:
   listeners:
     - name: http
       port: 80
+      hostname: example.com
       protocol: HTTP
       allowedRoutes:
         matchLabels:

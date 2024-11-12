@@ -20,6 +20,9 @@ spec:
     {{- range . }}
     - name: {{ .name }}
       protocol: {{ .protocol }}
+      {{- if .hostname }}
+      hostname: {{ .hostname }}
+      {{- end }}
       {{- if .port }}
       port: {{ .port }}
       {{- end }}
