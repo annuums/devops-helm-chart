@@ -1,6 +1,6 @@
 {{- if .Values.httpRoutes }}
 apiVersion: gateway.networking.k8s.io/v1
-kind: HttpRoute
+kind: HTTPRoute
 metadata:
   name: {{ .Values.httpRoutes.name }}
   namespace: {{ template "annuums-gateway.namespace" . }}
