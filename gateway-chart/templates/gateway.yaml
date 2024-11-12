@@ -35,6 +35,8 @@ spec:
               {{- toYaml .allowedRoutes.matchLabels | nindent 14 }}
       {{- end }}
       {{- if .tls }}
+      tls:
+        {{- toYaml .tls | nindent 8 }}
       {{- end }}
     {{- end }}
     {{- end }}

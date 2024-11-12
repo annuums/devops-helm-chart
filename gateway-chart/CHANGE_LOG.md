@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.6
+- fix: fix missing `tls` field in template
+
 ## 0.0.5
 - fix: add missing `hostname` filed in listeners
 
