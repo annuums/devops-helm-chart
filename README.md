@@ -40,3 +40,23 @@ dependencies:
 ```shell
 $ helm dep update
 ```
+
+## Docker Public Hub with Argo CD
+- Docker Public Hub로 부터 본 차트를 이용할 수 있습니다.
+- Argo CD에 로그인 하기 위한 Argo CD Secret Yaml
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-annuums-chart
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+  annotations:
+    managed-by: argocd.argoproj.io
+stringData:
+  enableOCI: "true"
+  name: "annuums-chart"
+  type: "helm"
+  url: "registry-1.docker.io/annuums" 
+```
