@@ -25,10 +25,11 @@ spec:
       {{- end }}
       {{- if .allowedRoutes }}
       allowedRoutes:
-        namespace:
+        namespaces:
           from: Selector
-          matchLabels:
-            {{- toYaml .allowedRoutes.matchLabels | nindent 12 }}
+          selector:
+            matchLabels:
+              {{- toYaml .allowedRoutes.matchLabels | nindent 14 }}
       {{- end }}
       {{- if .tls }}
       {{- end }}

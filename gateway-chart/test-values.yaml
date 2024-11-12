@@ -40,7 +40,7 @@ httpRoutes:
     # example.com/foo -> my-service:80
     - matches:
       - path:
-          type: Prefix
+          type: PathPrefix
           value: /foo
       backendRefs:
         - name: my-service
@@ -52,10 +52,12 @@ httpRoutes:
         requestRedirect:
           scheme: https
           statusCode: 301
-      # example.com/foo -> rew.example.com/bar
-      - type: URLRewrite
-        urlRewrite:
-          hostname: rew.example.com
+    - filters:
+        # example.com/foo -> rew.example.com/foo
+        - type: URLRewrite
+          urlRewrite:
+            hostname: rew.example.com
+    - filters:
       # example.com/foo -> rew.example.com/bar
       - type: URLRewrite
         urlRewrite:
@@ -63,6 +65,7 @@ httpRoutes:
           path:
             type: ReplaceFullPath
             replaceFullPath: /bar
+    - filters:
       # example.com/foo/hello -> rew.example.com/bar/hello
       - type: URLRewrite
         urlRewrite:
@@ -70,3 +73,24 @@ httpRoutes:
           path:
             type: ReplacePrefixMatch
             replacePrefixMatch: /bar
+
+grpcRoutes:
+  name: my-grpc-route
+  annotations: {}
+  labels: {}
+  parentRefs:
+    - name: my-gateway
+  hostnames:
+    - example.com
+  rules:
+  - matches:
+    - headers:
+      - type: Exact
+        name: env
+        value: canary
+    backendRefs:
+    - name: bar-svc-canary
+      port: 50051
+  - backendRefs:
+    - name: bar-svc
+      port: 50051
