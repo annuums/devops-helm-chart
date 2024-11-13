@@ -16,6 +16,9 @@ autoscaling:
   targetCPUUtilizationPercentage: 60
   targetMemoryUtilizationPercentage: 60
 
+imagePullSecrets:
+  - name: my-registry-secret
+  - name: my-registry-secret-2
 
 service:
   create: true

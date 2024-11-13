@@ -73,6 +73,8 @@ spec:
         {{- end }}
       {{- end }}
       restartPolicy: {{ default "Always" .Values.restartPolicy }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
       containers:
       {{- with .Values.containers }}
         {{- range .}}
