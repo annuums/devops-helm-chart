@@ -14,6 +14,10 @@ labels:
   my-label: custom-label
   cronjob: batch-0
 
+imagePullSecrets:
+  - name: my-registry-secret
+  - name: my-registry-secret-2
+
 cronjob:
   name: pigeon-cron-job
   schedule: "* * * * *"

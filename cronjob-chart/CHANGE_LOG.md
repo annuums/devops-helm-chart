@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.6.0
+- feat: add image pull secret
+
 ## 0.5.0
 - Add labels for `annuums.orb/version: {{ chart-name }}-{{ chart-version }}`
   - It will helps gaining observability
