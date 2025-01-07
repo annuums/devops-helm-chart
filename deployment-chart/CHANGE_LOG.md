@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.10.1
+- fix: fix image pull secret when value is not present
+
 ## 0.10.0
 - feat: add image pull secret
 
