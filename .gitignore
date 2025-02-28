@@ -6,6 +6,8 @@ test-values-output.yaml
 # helm charts
 *.tgz
 
+**/.DS_Store
+
 .idea
 .idea/**
 
