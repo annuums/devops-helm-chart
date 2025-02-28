@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.11.0
+- feat: support aws target group binding
+
 ## 0.10.1
 - fix: fix image pull secret when value is not present
 
