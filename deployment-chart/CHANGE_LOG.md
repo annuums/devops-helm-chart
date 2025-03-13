@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.12.0
+- feat: support pdb for pods
+
 ## 0.11.0
 - feat: support aws target group binding
 

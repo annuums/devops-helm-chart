@@ -1,0 +1,19 @@
+{{- with .Values.containers }}
+{{- range .}}
+{{- $index := 0 }}
+{{- if and .pdb .pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "annuums-deployment.fullname" $ }}-{{ $index }}
+  namespace: {{ template "annuums-deployment.namespace" $ }}
+spec:
+  maxUnavailable: {{ .pdb.maxUnavailable }}
+  minAvailable: {{ .pdb.minAvailable }}
+  selector:
+    matchLabels:
+      annuums.devops/name: {{ include "annuums-deployment.fullname" $ }}-selector
+{{- $index = add $index 1 }}
+{{- end }}
+{{- end }}
+{{- end }}

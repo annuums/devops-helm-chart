@@ -2,4 +2,4 @@ apiVersion: v2
 description: A Helm chart for Kubernetes Deployment Object in Annuums
 name: deployment-chart
 type: application
-version: 0.11.0
+version: 0.12.0
