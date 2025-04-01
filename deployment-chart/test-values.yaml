@@ -52,6 +52,9 @@ serviceAccount:
 
 containers:
   - name: pigeon-1
+    pdb:
+      enabled: true
+      minAvailable: 1
     lifecycle:
       preStop:
         exec:

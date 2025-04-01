@@ -23,7 +23,7 @@ spec:
       targetPort: {{ .targetPort }}
       protocol: {{ .protocol }}
       {{- if .appProtocol }}
-        appProtocol: {{ .appProtocol }}
+      appProtocol: {{ .appProtocol }}
       {{- end }}
   {{- end }}
   {{- end }}

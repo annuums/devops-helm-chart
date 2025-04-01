@@ -1,20 +1,35 @@
 {{- with .Values.containers }}
-{{- range .}}
-{{- $index := 0 }}
-{{- if and .pdb .pdb.enabled }}
-{{ include "validate.pdbAvailability" .pdb }}
+  {{- range . }}
+  {{- if and .pdb .pdb.enabled }}
+
+  {{- if .pdb.maxUnavailable }}
+---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "annuums-deployment.fullname" $ }}-{{ $index }}
+  name: {{ .name }}-pdb-max-unavailable
   namespace: {{ template "annuums-deployment.namespace" $ }}
 spec:
   maxUnavailable: {{ .pdb.maxUnavailable }}
+  selector:
+    matchLabels:
+      annuums.devops/name: {{ include "annuums-deployment.fullname" $ }}-selector
+  {{- end }}
+
+  {{- if .pdb.minAvailable }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-pdb-min-available
+  namespace: {{ template "annuums-deployment.namespace" $ }}
+spec:
   minAvailable: {{ .pdb.minAvailable }}
   selector:
     matchLabels:
       annuums.devops/name: {{ include "annuums-deployment.fullname" $ }}-selector
-{{- $index = add $index 1 }}
-{{- end }}
-{{- end }}
-{{- end }}
+  {{- end }}
+  
+  {{- end }}
+  {{- end }}
+  {{- end }}
