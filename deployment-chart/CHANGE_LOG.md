@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.13.0
+- feat: support service app protocol
+
 ## 0.12.0
 - feat: support pdb for pods
 

@@ -22,6 +22,9 @@ spec:
       port: {{ .port }}
       targetPort: {{ .targetPort }}
       protocol: {{ .protocol }}
+      {{- if .appProtocol }}
+        appProtocol: {{ .appProtocol }}
+      {{- end }}
   {{- end }}
   {{- end }}
   selector:
