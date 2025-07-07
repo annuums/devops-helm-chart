@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.7.0
+- feat: support persistent volume claim
+  - Add `persistentVolumeClaim` property to `cronjob.spec.template.spec`
+  - Example:
+    ```yaml
+    persistentVolumeClaim:
+      name: my-pvc
+      mountPath: /data
+    ```
+
 ## 0.6.1
 - chore: trigger for docker public hub
 

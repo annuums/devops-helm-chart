@@ -73,7 +73,9 @@ volumes:
   - name: configmap-volume
     configMapVolume:
       name: conf-volume
-
+  - name: pvc-volume
+    persistentVolumeClaim:
+      name: my-pvc-ref-name
 affinity:
   requiredDuringSchedulingIgnoredDuringExecution:
     matchExpressions:
