@@ -178,5 +178,9 @@ spec:
               configMap:
                 name: {{ .configMapVolume.name }}
               {{- end }}
+              {{- if .persistentVolumeClaim }}
+              persistentVolumeClaim:
+                claimName: {{ .persistentVolumeClaim.name }}
+              {{- end }}
             {{- end }}
           {{- end }}
