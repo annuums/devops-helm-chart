@@ -90,8 +90,8 @@ tolerations:
 
 environment:
   env:
-    - name: PORT
-      value: "3000"
+    - name: FOO
+      value: BAR
   secret:
     - name: sec-env-name
       ref:
