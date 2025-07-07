@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.6.1
+- chore: trigger for docker public hub
+
 ## 0.6.0
 - feat: add image pull secret
 
