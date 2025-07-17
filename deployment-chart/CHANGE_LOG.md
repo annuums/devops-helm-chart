@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.2
+- fix: remove annotations when it is empty
+
 ## 0.14.1
 - feat: remove service and targetgroup binding from deployment chart
 
