@@ -1,0 +1,15 @@
+{{- if and (.Values) (.Values.create) }}
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: {{ template "annuums-tgb.fullname" . }}
+  namespace: {{ template "annuums-tgb.namespace" . }}
+  labels:
+    {{- include "annuums-tgb.labels" . | nindent 4 }}
+spec:
+  serviceRef:
+    name: {{ .Values.service.name }}
+    port: {{ .Values.service.port }} #K8s Service Port
+  targetGroupARN: {{ .Values.arn }} #Target Group ARN
+  targetType: {{ default "ip" .Values.type }} #Target Type
+{{- end }}

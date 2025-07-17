@@ -1,0 +1,5 @@
+apiVersion: v2
+description: A Helm chart for Kubernetes TargetGroupBinding Object in Annuums
+name: targetgroupbinding-chart
+type: application
+version: 0.0.1

@@ -1,0 +1,12 @@
+fullnameOverride: annuums-tgb
+appVersionSuffix: deployment-chart
+namespace: annuums-deployment
+
+create: true
+port: 80
+arn: arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890123456
+type: ip
+
+service:
+  name: my-service
+  port: 80
