@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.0
+- feat: support custom selector for service
+
 ## 0.13.1
 - fix: pdb template yaml error
 - fix: service template indent error
