@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.1
+- feat: remove service and targetgroup binding from deployment chart
+
 ## 0.14.0
 - feat: support custom selector for service
 

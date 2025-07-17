@@ -42,8 +42,8 @@ Create a default appVersion.
 Common labels
 */}}
 {{- define "annuums-deployment.labels" -}}
-{{- if .Values.service.selector }}
-{{- toYaml $.Values.service.selector }}
+{{- if .Values.serviceSelector }}
+{{- toYaml $.Values.serviceSelector }}
 {{- else }}
 annuums.devops/name: {{ include "annuums-deployment.fullname" . }}-selector
 {{- end }}
