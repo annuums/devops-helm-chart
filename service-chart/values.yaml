@@ -1,0 +1,22 @@
+fullnameOverride: annuums-service
+appVersionSuffix: service-chart
+namespace: annuums-service
+
+create: true
+name: pigeon-service
+selector:
+  annuums.devops/name: pigeon-custom-selector
+labels:
+  annuums.label/pigeon: true
+annotations:
+  cloud.google.com/neg: '{"exposed_ports": {"3000":{"name": "devops-default-be-test"}}}'
+ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  - name: metric
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+    appProtocol: kubernetes.io/ws
