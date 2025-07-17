@@ -1,6 +1,6 @@
 fullnameOverride: annuums-tgb
-appVersionSuffix: deployment-chart
-namespace: annuums-deployment
+appVersionSuffix: targetgroupbinding-chart
+namespace: annuums-tgb
 
 create: true
 arn: arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890123456
