@@ -42,7 +42,11 @@ Create a default appVersion.
 Common labels
 */}}
 {{- define "annuums-deployment.labels" -}}
+{{- if .Values.service.selector }}
+{{- toYaml $.Values.service.selector }}
+{{- else }}
 annuums.devops/name: {{ include "annuums-deployment.fullname" . }}-selector
+{{- end }}
 helm.sh/chart: {{ include "annuums-deployment.chart" . }}
 app.kubernetes.io/version: {{ include "annuums-deployment.appVersion" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}

@@ -31,5 +31,9 @@ spec:
   {{- end }}
   {{- end }}
   selector:
+    {{- if .Values.service.selector }}
+    {{- toYaml .Values.service.selector | nindent 4 }}
+    {{- else }}
     annuums.devops/name: {{ template "annuums-deployment.fullname" . }}-selector
+    {{- end }}
 {{- end }}

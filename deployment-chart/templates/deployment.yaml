@@ -20,7 +20,11 @@ spec:
   revisionHistoryLimit: {{ default 3 .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
+      {{- if .Values.service.selector }}
+      {{- toYaml .Values.service.selector | nindent 6 }}
+      {{- else }}
       annuums.devops/name: {{ include "annuums-deployment.fullname" . }}-selector
+      {{- end }}
   template:
     metadata:
   {{- with .Values.containers }}

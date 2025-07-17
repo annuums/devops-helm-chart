@@ -23,6 +23,8 @@ imagePullSecrets:
 service:
   create: true
   name: pigeon-service
+  selector:
+    annuums.devops/name: pigeon-custom-selector
   labels:
     annuums.label/pigeon: true
   annotations:
