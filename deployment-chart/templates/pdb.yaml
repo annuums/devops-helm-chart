@@ -13,7 +13,11 @@ spec:
   maxUnavailable: {{ .pdb.maxUnavailable }}
   selector:
     matchLabels:
+      {{- if $.Values.service.selector }}
+      {{- toYaml $.Values.service.selector | nindent 6 }}
+      {{- else }}
       annuums.devops/name: {{ include "annuums-deployment.fullname" $ }}-selector
+      {{- end }}
   {{- end }}
 
   {{- if .pdb.minAvailable }}
@@ -27,7 +31,11 @@ spec:
   minAvailable: {{ .pdb.minAvailable }}
   selector:
     matchLabels:
+      {{- if $.Values.service.selector }}
+      {{- toYaml $.Values.service.selector | nindent 6 }}
+      {{- else }}
       annuums.devops/name: {{ include "annuums-deployment.fullname" $ }}-selector
+      {{- end }}
   {{- end }}
   
   {{- end }}
