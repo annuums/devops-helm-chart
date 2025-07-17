@@ -3,12 +3,6 @@ kind: Service
 metadata:
   name: {{ .Values.name }}
   namespace: {{ template "annuums-service.namespace" . }}
-  labels:
-    annuums.obs/version: {{ template "annuums-service.chart" . }}
-    {{- include "annuums-service.labels" . | nindent 4 }}
-    {{- if .Values.labels }}
-    {{- toYaml .Values.labels | nindent 4 }}
-    {{- end }}
   {{- if .Values.annotations }}
   annotations:
     {{- toYaml .Values.annotations | nindent 4 }}

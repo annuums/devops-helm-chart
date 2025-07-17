@@ -6,8 +6,6 @@ create: true
 name: pigeon-service
 selector:
   annuums.devops/name: pigeon-custom-selector
-labels:
-  annuums.label/pigeon: true
 annotations:
   cloud.google.com/neg: '{"exposed_ports": {"3000":{"name": "devops-default-be-test"}}}'
 ports:
