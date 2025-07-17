@@ -2,10 +2,10 @@ fullnameOverride: annuums-tgb
 appVersionSuffix: targetgroupbinding-chart
 namespace: annuums-tgb
 
-create: true
-arn: arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890123456
-type: ip
+create: false
+arn: change_me
+type: change_me
 
 service:
-  name: my-service
-  port: 80
+  name: change_me
+  port: change_me
