@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.2
+- fix: remove image pull secrets when it is nil
+
 ## 0.7.1
 - fix: fix affinity syntax as native kubernetes syntax
 

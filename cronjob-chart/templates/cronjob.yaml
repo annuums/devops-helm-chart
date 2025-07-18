@@ -61,8 +61,10 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
+          {{- if .Values.imagePullSecrets }}
           imagePullSecrets:
             {{- toYaml .Values.imagePullSecrets | nindent 12 }}
+          {{- end }}
           containers:
           {{- with .Values.cronjob.containers }}
             {{- range $index, $container := . }}
