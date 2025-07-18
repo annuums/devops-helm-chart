@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.3
+- fix: fix affinity syntax as native kubernetes syntax
+
 ## 0.14.2
 - fix: remove annotations when it is empty
 
