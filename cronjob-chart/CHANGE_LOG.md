@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.1
+- fix: fix affinity syntax as native kubernetes syntax
+
 ## 0.7.0
 - feat: support persistent volume claim
   - Add `persistentVolumeClaim` property to `cronjob.spec.template.spec`

@@ -48,20 +48,7 @@ spec:
           {{- end }}
           {{- if .Values.affinity }}
           affinity:
-            nodeAffinity:
-              {{- if .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution }}
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                {{- with .Values.affinity.requiredDuringSchedulingIgnoredDuringExecution.matchExpressions }}
-                {{- range . }}
-                  - matchExpressions:
-                    - key: {{ .key }}
-                      operator: {{ .operator }}
-                      values:
-                      {{- toYaml .values | nindent 24 }}
-                {{- end }}
-                {{- end }}
-              {{- end }}
+            {{- toYaml .Values.affinity | nindent 12 }}
           {{- end }}
           {{- if .Values.tolerations }}
           tolerations:
