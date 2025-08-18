@@ -9,6 +9,8 @@ labels: {}
 
 targetGroupBinding: {}
 
+terminationGracePeriodSeconds: 30
+
 autoscaling:
   type: none # hpa | none
 

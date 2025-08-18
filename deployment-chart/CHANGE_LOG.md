@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.4
+- fix: add missing terminationGracePeriodSeconds property
+
 ## 0.14.3
 - fix: fix affinity syntax as native kubernetes syntax
 

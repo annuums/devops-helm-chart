@@ -3,6 +3,8 @@ namespace: pigeon
 
 restartPolicy: Always
 
+terminationGracePeriodSeconds: 40
+
 labels:
   my-label: custom-label
 
