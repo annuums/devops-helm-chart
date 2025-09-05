@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.5
+- feat: add scale down, scale up policy for hpa
+
 ## 0.14.4
 - fix: add missing terminationGracePeriodSeconds property
 
