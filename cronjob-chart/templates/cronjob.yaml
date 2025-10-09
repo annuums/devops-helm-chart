@@ -1,3 +1,5 @@
+---
+# Unique Name Check Passed {{- include "cronjob.checkUniqueContainerNames" . }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -68,7 +70,7 @@ spec:
           containers:
           {{- with .Values.cronjob.containers }}
             {{- range $index, $container := . }}
-            - name: {{ printf "%s-%d" $.Values.cronjob.name $index }}
+            - name: {{ $container.name }} # {{ printf "%s-%d" $.Values.cronjob.name $index }}
               image: {{ printf "%s:%s" $container.image.repository $container.image.tag | quote }}
               imagePullPolicy: {{ default "IfNotPresent" $container.image.pullPolicy }}
               {{- with $.Values.environment }}

@@ -39,6 +39,29 @@ Create a default appVersion.
 {{- end -}}
 
 {{/*
+Containers in cronjob must have unique names.
+This helper checks if there are multiple containers defined with the same name.
+*/}}
+{{- define "cronjob.checkUniqueContainerNames" -}}
+{{- with .Values.cronjob.containers }}
+  {{- $seen := dict -}}
+  {{- $dupes := list -}}
+  {{- range . }}
+    {{- $name := required "cronjob.containers[].name is required" .name -}}
+    {{- if hasKey $seen $name -}}
+      {{- $dupes = mustAppend $dupes $name -}}
+    {{- else -}}
+      {{- $_ := set $seen $name true -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $dupes) 0 -}}
+    {{- fail (printf "Duplicate container names in .Values.cronjob.containers: %s" (join ", " $dupes)) -}}
+  {{- end -}}
+{{- end }}
+{{- end }}
+*/}}
+
+{{/*
 Common labels
 */}}
 {{- define "annuums-cronjob.labels" -}}

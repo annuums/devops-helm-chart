@@ -30,6 +30,34 @@ cronjob:
         repository: first-rep
         tag: 1.0.0
         pullPolicy: Never
+      name: pigeon-container
+      labels:
+        test-label: "pigeon-1"
+        test-label-another: "pigeon-another"
+      annotations:
+        test-annotatino-second: "pigeon-1-a"
+        test-annotatino-first: "pigeon-1-b"
+      args:
+        - "while true; do sllep 30; done;"
+      command:
+        - "sh"
+        - "-c"
+      volumeMounts:
+        - name: hostpath-volume
+          mountPath: /foo
+          subPath: ./foo
+          readOnly: true
+      # Resource Default
+      # cpu: 250m
+      # memory: 128Mi
+      resources:
+        cpu: 250m
+        memory: 256Mi
+    - image:
+        repository: first-rep
+        tag: 1.0.0
+        pullPolicy: Never
+      name: pigeon-another-container # pigeon-container will occur error for duplicate name
       labels:
         test-label: "pigeon-1"
         test-label-another: "pigeon-another"

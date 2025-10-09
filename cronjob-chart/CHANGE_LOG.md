@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.7.3
+- feat: add cronjob.checkUniqueContainerNames helperNames
+  - If you have multiple containers in a pod, you need to set unique names for each container.
+  - This property will help you to set unique names for each container.
+
 ## 0.7.2
 - fix: remove image pull secrets when it is nil
 
