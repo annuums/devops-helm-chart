@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.14.6
+feat: add hostNetwork configuration and validations
+
 ## 0.14.5
 - feat: add scale down, scale up policy for hpa
 

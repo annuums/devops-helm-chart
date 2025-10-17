@@ -34,6 +34,7 @@ spec:
         {{- toYaml .Values.annotations | nindent 8 }}
       {{- end }}
     spec:
+      hostNetwork: {{ default false .Values.hostNetwork }}
       {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       {{- end }}

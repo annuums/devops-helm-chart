@@ -60,3 +60,18 @@ Check if both minAvailable and maxUnavailable are set.
     {{- fail "Error: Both minAvailable and maxUnavailable are set in PodDisruptionBudget. Please set only one." -}}
   {{- end -}}
 {{- end -}}
+
+{{/*
+Check if hostNetwork is set to true and hostPort is defined in any container.
+*/}}
+{{- define "validate.hostNetworkAndHostPort" -}}
+  {{- if .Values.hostNetwork }}
+  {{- range $i, $c := .Values.containers }}
+    {{- range $j, $p := $c.ports }}
+      {{- if $p.hostPort }}
+        {{- fail (printf "Error: hostNetwork=true and containers[%d].ports[%d].hostPort=%v. This configuration is not allowed." $i $j $p.hostPort) -}}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end -}}

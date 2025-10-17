@@ -60,6 +60,8 @@ serviceAccount:
     iam.gke.io/gcp-service-account: pigeon-sa@annuums.iam.gserviceaccount.com
     another-annotation: hello-world
 
+hostNetwork: false
+
 containers:
   - name: pigeon-1
     pdb:
@@ -140,6 +142,7 @@ containers:
       memory: 256Mi
     ports:
       - containerPort: 5050
+        hostPort: 1234
         protocol: TCP
   - name: pigeon-2-pdb-min-available
     pdb:
