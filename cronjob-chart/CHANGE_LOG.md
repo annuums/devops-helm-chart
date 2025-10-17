@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.7.4
+- fix: remove duplicates in pod's labels and annotations
+  - remove annotations in pod level
+- feat: add hostNetwork options
+
 ## 0.7.3
 - feat: add cronjob.checkUniqueContainerNames helperNames
   - If you have multiple containers in a pod, you need to set unique names for each container.

@@ -22,24 +22,15 @@ spec:
       activeDeadlineSeconds: {{ default 600 .Values.cronjob.activeDeadlineSeconds }}
       template:
         metadata:
-          {{- $index := 0 }}
-          {{- with .Values.cronjob.containers }}
-          {{- range . }}
           labels:
             app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" $ }}
-            annuums.obs/version: {{ template "annuums-cronjob.chart" $ }}-{{ $index }}
+            annuums.obs/version: {{ template "annuums-cronjob.chart" $ }}
             {{- include "annuums-cronjob.labels" $ | nindent 12 }}
             {{- if .labels }}
-              {{- toYaml .labels | nindent 12 }}
+            {{- toYaml .labels | nindent 12 }}
             {{- end }}
-          {{- if .annotations }}
-          annotations:
-              {{- toYaml .annotations | nindent 12 }}
-            {{- end }}
-          {{- $index = add $index 1 }}
-          {{- end }}
-          {{- end }}
         spec:
+          hostNetwork: {{ default false .Values.cronjob.hostNetwork }}
           restartPolicy: {{ default "Never" .Values.cronjob.restartPolicy }}
           {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
           serviceAccountName: {{ .Values.serviceAccount.name }}
