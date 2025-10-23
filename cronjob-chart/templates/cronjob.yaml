@@ -5,6 +5,10 @@ kind: CronJob
 metadata:
   name: {{ template "annuums-cronjob.fullname" . }}
   namespace: {{ template "annuums-cronjob.namespace" . }}
+  annotations:
+    {{- if .Values.annotations }}
+    {{- toYaml .Values.annotations | nindent 4 }}
+    {{- end }}
   labels:
     app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" . }}
     annuums.obs/version: {{ template "annuums-cronjob.chart" . }}
@@ -22,6 +26,10 @@ spec:
       activeDeadlineSeconds: {{ default 600 .Values.cronjob.activeDeadlineSeconds }}
       template:
         metadata:
+          annotations:
+            {{- if .Values.annotations }}
+            {{- toYaml .Values.annotations | nindent 12}}
+            {{- end }}
           labels:
             app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" $ }}
             annuums.obs/version: {{ template "annuums-cronjob.chart" $ }}

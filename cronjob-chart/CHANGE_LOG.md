@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.5
+- fix: set common annotations for pod and cronjob object
+
 ## 0.7.4
 - fix: remove duplicates in pod's labels and annotations
   - remove annotations in pod level
