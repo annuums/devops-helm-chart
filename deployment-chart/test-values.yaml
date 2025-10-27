@@ -8,6 +8,8 @@ terminationGracePeriodSeconds: 40
 labels:
   my-label: custom-label
 
+strategy: {}
+
 annotations:
   argocd: hey
 

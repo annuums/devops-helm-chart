@@ -75,3 +75,14 @@ Check if hostNetwork is set to true and hostPort is defined in any container.
   {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Check if rollingUpdate maxSurge and maxUnavailable both 0
+*/}}
+{{- define "validate.rollingUpdateStrategy" -}}
+{{- if .Values.strategy.rollingUpdate }}
+  {{- if and (.Values.strategy.rollingUpdate.maxSurge | toString | eq "0") (.Values.strategy.rollingUpdate.maxUnavailable | toString | eq "0") }}
+    {{- fail (printf "Error: .strategy.rollingUpdate.maxSurge .Values.strategy.rollingUpdate.maxUnavailable cannot be zero at the same time.") }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

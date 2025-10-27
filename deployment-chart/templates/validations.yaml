@@ -1,1 +1,2 @@
 # HostNetwork Check Passed {{- include "validate.hostNetworkAndHostPort" . }}
+# Deploy Strategy Check Passed {{- include "validate.rollingUpdateStrategy" . }}
