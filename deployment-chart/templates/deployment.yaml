@@ -14,6 +14,15 @@ metadata:
     {{- toYaml .Values.labels | nindent 4 }}
     {{- end }}
 spec:
+  strategy:
+    {{- if .Values.strategy.type | eq "RollingUpdate" }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+    {{- else }}
+    type: Recreate
+    {{- end }}
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ default 1 .Values.replicas }}
   {{- end }}

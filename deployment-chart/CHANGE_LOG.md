@@ -1,7 +1,12 @@
 # Change Log
 
+## 0.15.0
+- feat: add update strategy
+  - support Recreate
+  - support RollingUpdate with maxSurge, maxUnavailable
+
 ## 0.14.6
-feat: add hostNetwork configuration and validations
+- feat: add hostNetwork configuration and validations
 
 ## 0.14.5
 - feat: add scale down, scale up policy for hpa
