@@ -19,7 +19,7 @@ imagePullSecrets:
   - name: my-registry-secret-2
 
 annotations:
-  annuums.devops/pigeon: true
+  annuums.devops/pigeon: pigeon
 
 cronjob:
   name: pigeon-cron-job
