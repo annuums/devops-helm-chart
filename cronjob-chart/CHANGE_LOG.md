@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.6
+- fix: prevent empty annotations from being rendered in templates
+
 ## 0.7.5
 - fix: set common annotations for pod and cronjob object
 
