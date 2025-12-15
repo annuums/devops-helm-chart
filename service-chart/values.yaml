@@ -6,3 +6,9 @@ create: false
 selector: {}
 annotations: {}
 ports: []
+
+clusterIP: null
+internalTrafficPolicy: null
+externalTrafficPolicy: null
+sessionAffinity: None
+type: ClusterIP

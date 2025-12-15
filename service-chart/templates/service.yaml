@@ -1,3 +1,6 @@
+---
+# ExternalTrafficPolicy Check Passed {{- include "annuums-service.checkExternalTrafficPolicyPassed" . }}
+# ClusterIP Check Passed {{- include "annuums-service.checkClusterIPPassed" . }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,6 +11,17 @@ metadata:
     {{- toYaml .Values.annotations | nindent 4 }}
   {{- end }}
 spec:
+  type: {{ .Values.type | default "ClusterIP" }}
+  {{- if .Values.clusterIP }}
+  clusterIP: {{ .Values.clusterIP }}
+  {{- end }}
+  {{- if .Values.internalTrafficPolicy }}
+  internalTrafficPolicy: {{ .Values.internalTrafficPolicy }}
+  {{- end }}
+  {{- if .Values.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.externalTrafficPolicy }}
+  {{- end }}
+  sessionAffinity: {{ .Values.sessionAffinity | default "None" }}
   {{- with .Values.ports }}
   ports:
   {{- range .}}

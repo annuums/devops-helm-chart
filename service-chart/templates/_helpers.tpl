@@ -51,3 +51,29 @@ helm.sh/chart: {{ include "annuums-service.chart" . }}
 app.kubernetes.io/version: {{ include "annuums-service.appVersion" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+
+{{/*
+Test externalTrafficPolicy for LoadBalancer, NodePort Type Only
+*/}}
+{{- define "annuums-service.checkExternalTrafficPolicyPassed" -}}
+{{/* hasKey externalTrafficPolicy and it is not null */}}
+    {{- if and (hasKey .Values "externalTrafficPolicy") (not (eq .Values.externalTrafficPolicy nil)) -}}
+        {{- if not (or (eq .Values.type "NodePort") (eq .Values.type "LoadBalancer")) -}}
+            {{- fail "externalTrafficPolicy can only be set when type is for external s.t. LoadBalancer or NodePort" -}}
+        {{- end }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Test clusterIP for ClusterIP Type Only
+*/}}
+{{- define "annuums-service.checkClusterIPPassed" -}}
+{{- if eq .Values.type "ClusterIP" -}}
+  {{- if hasKey .Values "clusterIP" -}}
+    {{- /* valid value */ -}}
+  {{- else -}}
+    {{- fail "When type is ClusterIP, clusterIP must be set to a valid IP or 'None' for headless services" -}}
+  {{- end -}}
+{{- end -}}
+{{- end }}

@@ -14,3 +14,8 @@ ports:
     targetPort: 8081
     protocol: TCP
     appProtocol: kubernetes.io/ws
+
+type: "ClusterIP"
+clusterIP: "172.18.0.1"
+internalTrafficPolicy: Cluster
+sessionAffinity: None
