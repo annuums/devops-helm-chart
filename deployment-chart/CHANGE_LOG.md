@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.15.1
+- fix: add labels to pod template metadata
+
 ## 0.15.0
 - feat: add update strategy
   - support Recreate

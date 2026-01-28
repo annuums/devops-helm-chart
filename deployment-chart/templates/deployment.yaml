@@ -38,6 +38,9 @@ spec:
     metadata:
       labels:
         {{- include "annuums-deployment.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+        {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
       {{- if .Values.annotations }}
       annotations:
         {{- toYaml .Values.annotations | nindent 8 }}
