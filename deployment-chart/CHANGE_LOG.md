@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.15.2
+- fix: add missing labels to service account
+
 ## 0.15.1
 - fix: add labels to pod template metadata
 
