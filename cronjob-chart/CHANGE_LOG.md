@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.7
+- fix: add missing labels to service account
+
 ## 0.7.6
 - fix: prevent empty annotations from being rendered in templates
 
