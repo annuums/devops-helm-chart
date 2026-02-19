@@ -1,0 +1,51 @@
+{{- $hasKeda := and (hasKey .Values.autoscaling "keda") (kindIs "map" .Values.autoscaling.keda) -}}
+{{- $hasScaledObject := and $hasKeda (hasKey .Values.autoscaling.keda "scaledObject") (gt (len .Values.autoscaling.keda.scaledObject) 0) -}}
+{{- if and .Values.autoscaling.enabled $hasScaledObject -}}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ default (printf "%s-so" (include "annuums-deployment.fullname" .)) .Values.autoscaling.keda.scaledObject.name }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  labels:
+{{- include "annuums-deployment.labels" . | nindent 4 }}
+{{- if .Values.labels }}
+{{- toYaml .Values.labels | nindent 4 }}
+{{- end }}
+{{- if .Values.autoscaling.keda.scaledObject.annotations }}
+  annotations:
+    {{- toYaml .Values.autoscaling.keda.scaledObject.annotations | nindent 4 }}
+{{- end }}
+spec:
+  scaleTargetRef:
+    apiVersion: {{ default "apps/v1" .Values.autoscaling.keda.scaledObject.scaleTargetRef.apiVersion }}
+    kind: {{ default "Deployment" .Values.autoscaling.keda.scaledObject.scaleTargetRef.kind }}
+    name: {{ default (include "annuums-deployment.fullname" .) .Values.autoscaling.keda.scaledObject.scaleTargetRef.name }}
+{{- with .Values.autoscaling.keda.scaledObject.pollingInterval }}
+  pollingInterval: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.cooldownPeriod }}
+  cooldownPeriod: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.idleReplicaCount }}
+  idleReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.minReplicaCount }}
+  minReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.maxReplicaCount }}
+  maxReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.fallback }}
+  fallback:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.advanced }}
+  advanced:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledObject.triggers }}
+  triggers:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
+

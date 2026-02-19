@@ -1,3 +1,4 @@
+# Check autoscaling Passed {{- include "validate.autoscaling" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -86,3 +86,15 @@ Check if rollingUpdate maxSurge and maxUnavailable both 0
   {{- end }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Check if hpa and keda is defined together
+*/}}
+{{- define "validate.autoscaling" -}}
+{{- $hasAutoscaling := and (hasKey .Values "autoscaling") (kindIs "map" .Values.autoscaling) -}}
+{{- $hasHpa := and $hasAutoscaling (hasKey .Values.autoscaling "hpa") (gt (len .Values.autoscaling.hpa) 0) -}}
+{{- $hasKeda := and $hasAutoscaling (hasKey .Values.autoscaling "keda") (gt (len .Values.autoscaling.keda) 0) -}}
+{{- if and $hasHpa $hasKeda -}}
+  {{- fail "Error: .autoscaling.hpa and .autoscaling.keda cannot be defined together" -}}
+{{- end -}}
+{{- end -}}

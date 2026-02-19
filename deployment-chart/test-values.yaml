@@ -41,6 +41,29 @@ autoscaling:
 #          - type: Pods
 #            value: 4
 #            periodSeconds: 60
+  keda: {}
+#    triggerAuthentication:
+#      name: aws-sqs-ta
+#      podIdentity:
+#        provider: aws
+#        identityOwner: workload
+#    scaledObject:
+#      name: sqs-worker-so
+#      scaleTargetRef:
+#        name: sqs-worker
+#      pollingInterval: 30
+#      cooldownPeriod: 300
+#      minReplicaCount: 0
+#      maxReplicaCount: 10
+#      triggers:
+#        - type: aws-sqs-queue
+#          authenticationRef:
+#            name: aws-sqs-ta
+#          metadata:
+#            awsRegion: ap-northeast-2
+#            queueURL: https://sqs.ap-northeast-2.amazonaws.com/000000000000/keda-devops-test
+#            queueLength: "10"
+#            activationQueueLength: "10"
 
 imagePullSecrets:
   - name: my-registry-secret

@@ -1,0 +1,52 @@
+{{- $hasKeda := and (hasKey .Values.autoscaling "keda") (kindIs "map" .Values.autoscaling.keda) -}}
+{{- $hasScaledJob := and $hasKeda (hasKey .Values.autoscaling.keda "scaledJob") (gt (len .Values.autoscaling.keda.scaledJob) 0) -}}
+{{- if and .Values.autoscaling.enabled $hasScaledJob -}}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: {{ default (printf "%s-sj" (include "annuums-deployment.fullname" .)) .Values.autoscaling.keda.scaledJob.name }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  labels:
+{{- include "annuums-deployment.labels" . | nindent 4 }}
+{{- if .Values.labels }}
+{{- toYaml .Values.labels | nindent 4 }}
+{{- end }}
+{{- if .Values.autoscaling.keda.scaledJob.annotations }}
+  annotations:
+{{- toYaml .Values.autoscaling.keda.scaledJob.annotations | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.autoscaling.keda.scaledJob.pollingInterval }}
+  pollingInterval: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.cooldownPeriod }}
+  cooldownPeriod: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.idleReplicaCount }}
+  idleReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.minReplicaCount }}
+  minReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.maxReplicaCount }}
+  maxReplicaCount: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ . }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.scalingStrategy }}
+  scalingStrategy:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.jobTargetRef }}
+  jobTargetRef:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.scaledJob.triggers }}
+  triggers:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}

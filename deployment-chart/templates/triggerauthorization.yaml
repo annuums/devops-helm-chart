@@ -1,0 +1,47 @@
+{{- $hasKeda := and (hasKey .Values.autoscaling "keda") (kindIs "map" .Values.autoscaling.keda) -}}
+{{- $hasTriggerAuth := and $hasKeda (hasKey .Values.autoscaling.keda "triggerAuthentication") (gt (len .Values.autoscaling.keda.triggerAuthentication) 0) -}}
+{{- if and .Values.autoscaling.enabled $hasTriggerAuth -}}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ default (printf "%s-ta" (include "annuums-deployment.fullname" .)) .Values.autoscaling.keda.triggerAuthentication.name }}
+  namespace: {{ template "annuums-deployment.namespace" . }}
+  labels:
+{{- include "annuums-deployment.labels" . | nindent 4 }}
+{{- if .Values.labels }}
+{{- toYaml .Values.labels | nindent 4 }}
+{{- end }}
+{{- if .Values.autoscaling.keda.triggerAuthentication.annotations }}
+  annotations:
+{{- toYaml .Values.autoscaling.keda.triggerAuthentication.annotations | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.autoscaling.keda.triggerAuthentication.podIdentity }}
+  podIdentity:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.secretTargetRef }}
+  secretTargetRef:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.env }}
+  env:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.hashiCorpVault }}
+  hashiCorpVault:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.azureKeyVault }}
+  azureKeyVault:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.gcpSecretManager }}
+  gcpSecretManager:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.autoscaling.keda.triggerAuthentication.awsSecretManager }}
+  awsSecretManager:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
