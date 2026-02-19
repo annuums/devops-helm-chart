@@ -1,4 +1,5 @@
-{{- if .Values.autoscaling.enabled }}
+{{- $hasHpa := and (hasKey .Values.autoscaling "hpa") (gt (len .Values.autoscaling.hpa) 0) -}}
+{{- if and .Values.autoscaling.enabled $hasHpa }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -14,26 +15,26 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ template "annuums-deployment.fullname" . }}
-  minReplicas: {{ coalesce .Values.autoscaling.minReplicas .Values.replicas 1 }}
-  maxReplicas: {{ coalesce .Values.autoscaling.maxReplicas (mul .Values.replicas 2) 2 }}
+  minReplicas: {{ coalesce .Values.autoscaling.hpa.minReplicas .Values.replicas 1 }}
+  maxReplicas: {{ coalesce .Values.autoscaling.hpa.maxReplicas (mul .Values.replicas 2) 2 }}
   metrics:
-    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.autoscaling.hpa.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ default 60 .Values.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ default 60 .Values.autoscaling.hpa.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if .Values.autoscaling.hpa.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ default 60 .Values.autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ default 60 .Values.autoscaling.hpa.targetMemoryUtilizationPercentage }}
     {{- end }}
-    {{- if and (not .Values.autoscaling.targetCPUUtilizationPercentage) (not .Values.autoscaling.targetMemoryUtilizationPercentage) }}
+    {{- if and (not .Values.autoscaling.hpa.targetCPUUtilizationPercentage) (not .Values.autoscaling.hpa.targetMemoryUtilizationPercentage) }}
     - type: Resource
       resource:
         name: cpu
@@ -41,9 +42,9 @@ spec:
           type: Utilization
           averageUtilization: 60
     {{- end }}
-  {{- if .Values.autoscaling.behavior }}
+  {{- if .Values.autoscaling.hpa.behavior }}
   behavior:
-    {{- toYaml .Values.autoscaling.behavior | nindent 4 }}
+    {{- toYaml .Values.autoscaling.hpa.behavior | nindent 4 }}
   {{- else }}
   behavior:
     scaleDown:
