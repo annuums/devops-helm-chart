@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.15.3
+- feat: support keda autoscaling 
+  - remove: remove `type` from `autoscaling`
+  - refactor: add parent key for `hpa`
+    - move all existing options under `autoscaling.hpa`.
+    - add `autoscaling.keda` for keda objects. 
+
 ## 0.15.2
 - fix: add missing labels to service account
 
