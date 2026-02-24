@@ -14,7 +14,7 @@ annotations:
   argocd: hey
 
 autoscaling:
-  enabled: true
+  enabled: false
   hpa: {}
 #    minReplicas: 1
 #    maxReplicas: 3
@@ -211,7 +211,7 @@ containers:
       - containerPort: 5050
         protocol: TCP
 
-replicas: 1
+replicas: 0
 revisionHistoryLimit: 3
 
 nodeSelector:

@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.15.4
+- fix: support `replicas: 0`
+
 ## 0.15.3
 - feat: support keda autoscaling 
   - remove: remove `type` from `autoscaling`
