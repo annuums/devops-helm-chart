@@ -69,11 +69,18 @@ Test externalTrafficPolicy for LoadBalancer, NodePort Type Only
 Test clusterIP for ClusterIP Type Only
 */}}
 {{- define "annuums-service.checkClusterIPPassed" -}}
-{{- if eq .Values.type "ClusterIP" -}}
-  {{- if hasKey .Values "clusterIP" -}}
+{{- if hasKey .Values "clusterIP" -}}
+  {{- if eq .Values.clusterIP "None" -}}
+    {{- if eq .Values.type "ClusterIP" -}}
+        {{- /* valid value for headless service */ -}}
+    {{- else -}}
+        {{- fail "When `clusterIP` is set to 'None', only following type is valid: ClusterIP." -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if or (eq .Values.type "NodePort") (eq .Values.type "ClusterIP") -}}
     {{- /* valid value */ -}}
   {{- else -}}
-    {{- fail "When type is ClusterIP, clusterIP must be set to a valid IP or 'None' for headless services" -}}
+    {{- fail "When `clusterIP` is given, only following types are valid: ClusterIP, NodePort. If you want to use Headless Service, please set 'None'." -}}
   {{- end -}}
 {{- end -}}
 {{- end }}

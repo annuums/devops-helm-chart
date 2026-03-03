@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.1.1
+- fix: remove default values for service object
+  - remove: `spec.clusterIP` for validation
+
 ## 0.1.0
 - feat: add several config options for service object
   - add: `spec.clusterIP`
