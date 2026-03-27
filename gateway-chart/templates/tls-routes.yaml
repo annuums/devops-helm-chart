@@ -1,4 +1,4 @@
-{{- if not (kindIs "slice" .Values.tlsRoutes) }}
+{{- if and .Values.tlsRoutes (not (kindIs "slice" .Values.tlsRoutes)) }}
   {{- fail "tlsRoutes must be a list ([]). See CHANGE_LOG.md" }}
 {{- end }}
 {{- range $i, $route := .Values.tlsRoutes }}

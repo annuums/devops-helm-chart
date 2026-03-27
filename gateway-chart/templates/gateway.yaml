@@ -18,6 +18,8 @@ spec:
   listeners:
     {{- if not .Values.gateway.listeners }}
     {{- fail "gateway.listeners is required and must not be empty" }}
+    {{- else if not (kindIs "slice" .Values.gateway.listeners) }}
+    {{- fail "gateway.listeners must be a list ([])" }}
     {{- end }}
     {{- range $i, $listener := .Values.gateway.listeners }}
     - name: {{ required (printf "gateway.listeners[%d].name is required" $i) $listener.name }}

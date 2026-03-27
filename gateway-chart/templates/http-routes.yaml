@@ -1,4 +1,4 @@
-{{- if not (kindIs "slice" .Values.httpRoutes) }}
+{{- if and .Values.httpRoutes (not (kindIs "slice" .Values.httpRoutes)) }}
   {{- fail "httpRoutes must be a list ([]). If upgrading from v0.0.x, migrate from object to list form. See CHANGE_LOG.md" }}
 {{- end }}
 {{- range $i, $route := .Values.httpRoutes }}

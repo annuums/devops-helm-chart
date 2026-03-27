@@ -1,4 +1,4 @@
-{{- if not (kindIs "slice" .Values.grpcRoutes) }}
+{{- if and .Values.grpcRoutes (not (kindIs "slice" .Values.grpcRoutes)) }}
   {{- fail "grpcRoutes must be a list ([]). If upgrading from v0.0.x, migrate from object to list form. See CHANGE_LOG.md" }}
 {{- end }}
 {{- range $i, $route := .Values.grpcRoutes }}

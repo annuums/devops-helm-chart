@@ -1,4 +1,4 @@
-{{- if not (kindIs "slice" .Values.loadBalancerConfigurations) }}
+{{- if and .Values.loadBalancerConfigurations (not (kindIs "slice" .Values.loadBalancerConfigurations)) }}
   {{- fail "loadBalancerConfigurations must be a list ([]). See CHANGE_LOG.md" }}
 {{- end }}
 {{- range $i, $lbc := .Values.loadBalancerConfigurations }}
