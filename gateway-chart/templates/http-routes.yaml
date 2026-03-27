@@ -1,23 +1,29 @@
-{{- if .Values.httpRoutes }}
+{{- if and .Values.httpRoutes (not (kindIs "slice" .Values.httpRoutes)) }}
+  {{- fail "httpRoutes must be a list ([]). If upgrading from v0.0.x, migrate from object to list form. See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $route := .Values.httpRoutes }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ .Values.httpRoutes.name }}
-  namespace: {{ template "annuums-gateway.namespace" . }}
+  name: {{ required (printf "httpRoutes[%d].name is required" $i) $route.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
   labels:
-    {{- include "annuums-gateway.labels" . | nindent 4 }}
-    {{- if .Values.httpRoutes.labels }}
-    {{- toYaml .Values.httpRoutes.labels | nindent 4 }}
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $route.labels }}
+    {{- toYaml $route.labels | nindent 4 }}
     {{- end }}
-  {{- if .Values.httpRoutes.annotations }}
+  {{- if $route.annotations }}
   annotations:
-    {{- toYaml .Values.httpRoutes.annotations | nindent 4 }}
+    {{- toYaml $route.annotations | nindent 4 }}
   {{- end }}
 spec:
   parentRefs:
-    {{- toYaml .Values.httpRoutes.parentRefs | nindent 4 }}
+    {{- toYaml (required (printf "httpRoutes[%d].parentRefs is required" $i) $route.parentRefs) | nindent 4 }}
+  {{- if $route.hostnames }}
   hostnames:
-    {{- toYaml .Values.httpRoutes.hostnames | nindent 4 }}
+    {{- toYaml $route.hostnames | nindent 4 }}
+  {{- end }}
   rules:
-    {{- toYaml .Values.httpRoutes.rules | nindent 4 }}
+    {{- toYaml (required (printf "httpRoutes[%d].rules is required" $i) $route.rules) | nindent 4 }}
 {{- end }}

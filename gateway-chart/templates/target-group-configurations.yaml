@@ -1,0 +1,31 @@
+{{- if and .Values.targetGroupConfigurations (not (kindIs "slice" .Values.targetGroupConfigurations)) }}
+  {{- fail "targetGroupConfigurations must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $tgc := .Values.targetGroupConfigurations }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: {{ required (printf "targetGroupConfigurations[%d].name is required" $i) $tgc.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $tgc.labels }}
+    {{- toYaml $tgc.labels | nindent 4 }}
+    {{- end }}
+  {{- if $tgc.annotations }}
+  annotations:
+    {{- toYaml $tgc.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  targetReference:
+    {{- toYaml (required (printf "targetGroupConfigurations[%d].targetReference is required" $i) $tgc.targetReference) | nindent 4 }}
+  {{- if $tgc.defaultConfiguration }}
+  defaultConfiguration:
+    {{- toYaml $tgc.defaultConfiguration | nindent 4 }}
+  {{- end }}
+  {{- if $tgc.routeConfigurations }}
+  routeConfigurations:
+    {{- toYaml $tgc.routeConfigurations | nindent 4 }}
+  {{- end }}
+{{- end }}

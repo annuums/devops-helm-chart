@@ -1,23 +1,29 @@
-{{- if .Values.grpcRoutes }}
+{{- if and .Values.grpcRoutes (not (kindIs "slice" .Values.grpcRoutes)) }}
+  {{- fail "grpcRoutes must be a list ([]). If upgrading from v0.0.x, migrate from object to list form. See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $route := .Values.grpcRoutes }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
-  name: {{ .Values.grpcRoutes.name }}
-  namespace: {{ template "annuums-gateway.namespace" . }}
+  name: {{ required (printf "grpcRoutes[%d].name is required" $i) $route.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
   labels:
-    {{- include "annuums-gateway.labels" . | nindent 4 }}
-    {{- if .Values.grpcRoutes.labels }}
-    {{- toYaml .Values.grpcRoutes.labels | nindent 4 }}
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $route.labels }}
+    {{- toYaml $route.labels | nindent 4 }}
     {{- end }}
-  {{- if .Values.grpcRoutes.annotations }}
+  {{- if $route.annotations }}
   annotations:
-    {{- toYaml .Values.grpcRoutes.annotations | nindent 4 }}
+    {{- toYaml $route.annotations | nindent 4 }}
   {{- end }}
 spec:
   parentRefs:
-    {{- toYaml .Values.grpcRoutes.parentRefs | nindent 4 }}
+    {{- toYaml (required (printf "grpcRoutes[%d].parentRefs is required" $i) $route.parentRefs) | nindent 4 }}
+  {{- if $route.hostnames }}
   hostnames:
-    {{- toYaml .Values.grpcRoutes.hostnames | nindent 4 }}
+    {{- toYaml $route.hostnames | nindent 4 }}
+  {{- end }}
   rules:
-    {{- toYaml .Values.grpcRoutes.rules | nindent 4 }}
+    {{- toYaml (required (printf "grpcRoutes[%d].rules is required" $i) $route.rules) | nindent 4 }}
 {{- end }}

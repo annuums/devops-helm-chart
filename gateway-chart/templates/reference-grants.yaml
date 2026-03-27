@@ -1,0 +1,25 @@
+{{- if and .Values.referenceGrants (not (kindIs "slice" .Values.referenceGrants)) }}
+  {{- fail "referenceGrants must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $grant := .Values.referenceGrants }}
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: {{ required (printf "referenceGrants[%d].name is required" $i) $grant.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $grant.labels }}
+    {{- toYaml $grant.labels | nindent 4 }}
+    {{- end }}
+  {{- if $grant.annotations }}
+  annotations:
+    {{- toYaml $grant.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  from:
+    {{- toYaml (required (printf "referenceGrants[%d].from is required" $i) $grant.from) | nindent 4 }}
+  to:
+    {{- toYaml (required (printf "referenceGrants[%d].to is required" $i) $grant.to) | nindent 4 }}
+{{- end }}

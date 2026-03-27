@@ -1,0 +1,29 @@
+{{- if and .Values.tlsRoutes (not (kindIs "slice" .Values.tlsRoutes)) }}
+  {{- fail "tlsRoutes must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $route := .Values.tlsRoutes }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata:
+  name: {{ required (printf "tlsRoutes[%d].name is required" $i) $route.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $route.labels }}
+    {{- toYaml $route.labels | nindent 4 }}
+    {{- end }}
+  {{- if $route.annotations }}
+  annotations:
+    {{- toYaml $route.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml (required (printf "tlsRoutes[%d].parentRefs is required" $i) $route.parentRefs) | nindent 4 }}
+  {{- if $route.hostnames }}
+  hostnames:
+    {{- toYaml $route.hostnames | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- toYaml (required (printf "tlsRoutes[%d].rules is required" $i) $route.rules) | nindent 4 }}
+{{- end }}

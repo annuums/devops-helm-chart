@@ -1,0 +1,68 @@
+{{- if and .Values.loadBalancerConfigurations (not (kindIs "slice" .Values.loadBalancerConfigurations)) }}
+  {{- fail "loadBalancerConfigurations must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
+{{- range $i, $lbc := .Values.loadBalancerConfigurations }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: LoadBalancerConfiguration
+metadata:
+  name: {{ required (printf "loadBalancerConfigurations[%d].name is required" $i) $lbc.name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if $lbc.labels }}
+    {{- toYaml $lbc.labels | nindent 4 }}
+    {{- end }}
+  {{- if $lbc.annotations }}
+  annotations:
+    {{- toYaml $lbc.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $lbc.targetRef }}
+  targetRef:
+    {{- toYaml $lbc.targetRef | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.scheme }}
+  scheme: {{ $lbc.scheme }}
+  {{- end }}
+  {{- if $lbc.ipAddressType }}
+  ipAddressType: {{ $lbc.ipAddressType }}
+  {{- end }}
+  {{- if $lbc.loadBalancerName }}
+  loadBalancerName: {{ $lbc.loadBalancerName }}
+  {{- end }}
+  {{- if $lbc.loadBalancerSubnets }}
+  loadBalancerSubnets:
+    {{- toYaml $lbc.loadBalancerSubnets | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.loadBalancerSubnetsSelector }}
+  loadBalancerSubnetsSelector:
+    {{- toYaml $lbc.loadBalancerSubnetsSelector | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.securityGroups }}
+  securityGroups:
+    {{- toYaml $lbc.securityGroups | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.sourceRanges }}
+  sourceRanges:
+    {{- toYaml $lbc.sourceRanges | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.loadBalancerAttributes }}
+  loadBalancerAttributes:
+    {{- toYaml $lbc.loadBalancerAttributes | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.listenerConfigurations }}
+  listenerConfigurations:
+    {{- toYaml $lbc.listenerConfigurations | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.tags }}
+  tags:
+    {{- toYaml $lbc.tags | nindent 4 }}
+  {{- end }}
+  {{- if $lbc.webACL }}
+  webACL: {{ $lbc.webACL }}
+  {{- end }}
+  {{- if $lbc.mergingMode }}
+  mergingMode: {{ $lbc.mergingMode }}
+  {{- end }}
+{{- end }}

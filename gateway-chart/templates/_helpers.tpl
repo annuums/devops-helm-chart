@@ -17,11 +17,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 Allow the release namespace to be overridden for multi-namespace gateways in combined charts
 */}}
 {{- define "annuums-gateway.namespace" -}}
-  {{- if .Values.namespaceOverride }}
-    {{- .Values.namespaceOverride -}}
-  {{- else }}
-    {{- .Release.Namespace -}}
-  {{- end }}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

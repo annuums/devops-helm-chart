@@ -1,12 +1,16 @@
 fullnameOverride: annuums-gateway
 appVersionSuffix: gateway-chart
-namespace: annuums-gateway
+# namespaceOverride: annuums-gateway
 
 gatewayClass:
   name: my-gateway-class
   annotations: {}
   labels: {}
-  controllerName: my-gateway-controller
+  controllerName: gateway.k8s.aws/alb
+  # parametersRef:
+  #   group: gateway.k8s.aws
+  #   kind: LoadBalancerConfiguration
+  #   name: my-lb-config
 
 gateway:
   className: my-gateway-class
@@ -19,85 +23,165 @@ gateway:
       hostname: example.com
       protocol: HTTP
       allowedRoutes:
-        matchLabels:
-          app: my-app
-          front: react
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              app: my-app
     - name: https
       port: 443
       protocol: HTTPS
       tls:
-        mode: Terminate # If protocol is `TLS`, `Passthrough` is a possible mode
+        mode: Terminate
         certificateRefs:
           - kind: Secret
             group: ""
             name: default-cert
+  # addresses:
+  #   - type: IPAddress
+  #     value: 198.51.100.0
+  # infrastructure:
+  #   labels:
+  #     environment: production
+  #   annotations:
+  #     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 
 httpRoutes:
-  name: my-http-route
-  annotations: {}
-  labels: {}
-  # You can add multiple parentRefs
-  # Usecase: 
-  parentRefs:
-    - name: my-gateway
-    - name: my-gateway-2
-  hostnames:
-    - example.com
-  rules:
-    # example.com/foo -> my-service:80
-    - matches:
-      - path:
-          type: PathPrefix
-          value: /foo
-      backendRefs:
-        - name: my-service
-          port: 80
-    # If you want to fine tune in details, you can add them here
-    - filters:
-      # http://example.com/foo -> https://example.com/foo
-      - type: RequestRedirect
-        requestRedirect:
-          scheme: https
-          statusCode: 301
-    - filters:
-        # example.com/foo -> rew.example.com/foo
-        - type: URLRewrite
-          urlRewrite:
-            hostname: rew.example.com
-    - filters:
+  - name: my-http-route
+    annotations: {}
+    labels: {}
+    parentRefs:
+      - name: my-gateway
+      - name: my-gateway-2
+    hostnames:
+      - example.com
+    rules:
+      # example.com/foo -> my-service:80
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /foo
+        backendRefs:
+          - name: my-service
+            port: 80
+      # http://example.com/* -> https://example.com/*
+      - filters:
+          - type: RequestRedirect
+            requestRedirect:
+              scheme: https
+              statusCode: 301
+      # example.com/foo -> rew.example.com/foo
+      - filters:
+          - type: URLRewrite
+            urlRewrite:
+              hostname: rew.example.com
       # example.com/foo -> rew.example.com/bar
-      - type: URLRewrite
-        urlRewrite:
-          hostname: rew.example.com
-          path:
-            type: ReplaceFullPath
-            replaceFullPath: /bar
-    - filters:
+      - filters:
+          - type: URLRewrite
+            urlRewrite:
+              hostname: rew.example.com
+              path:
+                type: ReplaceFullPath
+                replaceFullPath: /bar
       # example.com/foo/hello -> rew.example.com/bar/hello
-      - type: URLRewrite
-        urlRewrite:
-          hostname: rew.example.com
-          path:
-            type: ReplacePrefixMatch
-            replacePrefixMatch: /bar
+      - filters:
+          - type: URLRewrite
+            urlRewrite:
+              hostname: rew.example.com
+              path:
+                type: ReplacePrefixMatch
+                replacePrefixMatch: /bar
 
 grpcRoutes:
-  name: my-grpc-route
-  annotations: {}
-  labels: {}
-  parentRefs:
-    - name: my-gateway
-  hostnames:
-    - example.com
-  rules:
-  - matches:
-    - headers:
-      - type: Exact
-        name: env
-        value: canary
-    backendRefs:
-    - name: bar-svc-canary
-      port: 50051
-  - backendRefs:
-    - name: bar-svc
-      port: 50051
+  - name: my-grpc-route
+    annotations: {}
+    labels: {}
+    parentRefs:
+      - name: my-gateway
+    hostnames:
+      - example.com
+    rules:
+      - matches:
+          - headers:
+              - type: Exact
+                name: env
+                value: canary
+        backendRefs:
+          - name: bar-svc-canary
+            port: 50051
+      - backendRefs:
+          - name: bar-svc
+            port: 50051
+
+tlsRoutes:
+  - name: my-tls-route
+    annotations: {}
+    labels: {}
+    parentRefs:
+      - name: my-gateway
+        sectionName: tls
+    hostnames:
+      - example.com
+    rules:
+      - backendRefs:
+          - name: my-tls-service
+            port: 443
+
+referenceGrants:
+  - name: allow-gateway-to-app
+    from:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        namespace: gateway-ns
+    to:
+      - group: ""
+        kind: Service
+
+# AWS Load Balancer Controller custom CRDs
+loadBalancerConfigurations:
+  - name: my-lb-config
+    targetRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: my-gateway
+    scheme: internet-facing
+    ipAddressType: ipv4
+    # loadBalancerName: my-alb
+    # securityGroups:
+    #   - sg-xxxxxxxxxxxxxxxxx
+    # sourceRanges:
+    #   - 0.0.0.0/0
+    loadBalancerAttributes:
+      - key: deletion_protection.enabled
+        value: "false"
+    listenerConfigurations:
+      - protocolPort: HTTPS:443
+        defaultCertificate: arn:aws:acm:ap-northeast-2:123456789012:certificate/xxxx
+        sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    tags:
+      - key: Environment
+        value: production
+    # webACL: arn:aws:wafv2:ap-northeast-2:123456789012:regional/webacl/xxx/xxx
+    mergingMode: prefer-gateway-class
+
+targetGroupConfigurations:
+  - name: my-tg-config
+    targetReference:
+      group: ""
+      kind: Service
+      name: my-service
+    defaultConfiguration:
+      targetType: ip
+      protocol: HTTP
+      protocolVersion: HTTP1
+      healthCheckConfig:
+        path: /health
+        port: 8080
+        protocol: HTTP
+        healthyThresholdCount: 2
+        unhealthyThresholdCount: 3
+        intervalSeconds: 15
+        timeoutSeconds: 5
+      targetGroupAttributes:
+        - key: deregistration_delay.timeout_seconds
+          value: "30"
