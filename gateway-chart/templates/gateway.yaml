@@ -30,10 +30,10 @@ spec:
       allowedRoutes:
         {{- if .allowedRoutes.namespaces }}
         namespaces:
-          from: {{ .allowedRoutes.namespaces.from }}
-          {{- if .allowedRoutes.namespaces.selector }}
+          from: {{ required "allowedRoutes.namespaces.from is required" .allowedRoutes.namespaces.from }}
+          {{- if eq .allowedRoutes.namespaces.from "Selector" }}
           selector:
-            {{- toYaml .allowedRoutes.namespaces.selector | nindent 12 }}
+            {{- toYaml (required "allowedRoutes.namespaces.selector is required when from is Selector" .allowedRoutes.namespaces.selector) | nindent 12 }}
           {{- end }}
         {{- end }}
         {{- if .allowedRoutes.kinds }}

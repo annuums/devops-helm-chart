@@ -16,11 +16,11 @@ metadata:
   {{- end }}
 spec:
   parentRefs:
-    {{- toYaml .parentRefs | nindent 4 }}
+    {{- toYaml (required (printf "grpcRoutes[%s].parentRefs is required" .name) .parentRefs) | nindent 4 }}
   {{- if .hostnames }}
   hostnames:
     {{- toYaml .hostnames | nindent 4 }}
   {{- end }}
   rules:
-    {{- toYaml .rules | nindent 4 }}
+    {{- toYaml (required (printf "grpcRoutes[%s].rules is required" .name) .rules) | nindent 4 }}
 {{- end }}
