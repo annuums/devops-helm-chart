@@ -2,7 +2,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: {{ .Values.gateway.name }}
+  name: {{ required "gateway.name is required" .Values.gateway.name }}
   namespace: {{ template "annuums-gateway.namespace" . }}
   labels:
     {{- include "annuums-gateway.labels" . | nindent 4 }}
@@ -14,38 +14,39 @@ metadata:
     {{- toYaml .Values.gateway.annotations | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ .Values.gateway.className }}
+  gatewayClassName: {{ required "gateway.className is required" .Values.gateway.className }}
   listeners:
-    {{- with .Values.gateway.listeners }}
-    {{- range . }}
-    - name: {{ .name }}
-      protocol: {{ .protocol }}
-      {{- if .hostname }}
-      hostname: {{ .hostname }}
+    {{- if not .Values.gateway.listeners }}
+    {{- fail "gateway.listeners is required and must not be empty" }}
+    {{- end }}
+    {{- range $i, $listener := .Values.gateway.listeners }}
+    - name: {{ required (printf "gateway.listeners[%d].name is required" $i) $listener.name }}
+      protocol: {{ required (printf "gateway.listeners[%d].protocol is required" $i) $listener.protocol }}
+      {{- if $listener.hostname }}
+      hostname: {{ $listener.hostname }}
       {{- end }}
-      {{- if .port }}
-      port: {{ .port }}
+      {{- if $listener.port }}
+      port: {{ $listener.port }}
       {{- end }}
-      {{- if .allowedRoutes }}
+      {{- if $listener.allowedRoutes }}
       allowedRoutes:
-        {{- if .allowedRoutes.namespaces }}
+        {{- if $listener.allowedRoutes.namespaces }}
         namespaces:
-          from: {{ required "allowedRoutes.namespaces.from is required" .allowedRoutes.namespaces.from }}
-          {{- if eq .allowedRoutes.namespaces.from "Selector" }}
+          from: {{ required (printf "gateway.listeners[%d].allowedRoutes.namespaces.from is required" $i) $listener.allowedRoutes.namespaces.from }}
+          {{- if eq $listener.allowedRoutes.namespaces.from "Selector" }}
           selector:
-            {{- toYaml (required "allowedRoutes.namespaces.selector is required when from is Selector" .allowedRoutes.namespaces.selector) | nindent 12 }}
+            {{- toYaml (required (printf "gateway.listeners[%d].allowedRoutes.namespaces.selector is required when from is Selector" $i) $listener.allowedRoutes.namespaces.selector) | nindent 12 }}
           {{- end }}
         {{- end }}
-        {{- if .allowedRoutes.kinds }}
+        {{- if $listener.allowedRoutes.kinds }}
         kinds:
-          {{- toYaml .allowedRoutes.kinds | nindent 10 }}
+          {{- toYaml $listener.allowedRoutes.kinds | nindent 10 }}
         {{- end }}
       {{- end }}
-      {{- if .tls }}
+      {{- if $listener.tls }}
       tls:
-        {{- toYaml .tls | nindent 8 }}
+        {{- toYaml $listener.tls | nindent 8 }}
       {{- end }}
-    {{- end }}
     {{- end }}
   {{- if .Values.gateway.addresses }}
   addresses:

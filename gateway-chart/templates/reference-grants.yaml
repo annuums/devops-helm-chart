@@ -1,3 +1,6 @@
+{{- if not (kindIs "slice" .Values.referenceGrants) }}
+  {{- fail "referenceGrants must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
 {{- range $i, $grant := .Values.referenceGrants }}
 ---
 apiVersion: gateway.networking.k8s.io/v1beta1

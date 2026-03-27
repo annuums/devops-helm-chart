@@ -1,3 +1,6 @@
+{{- if not (kindIs "slice" .Values.loadBalancerConfigurations) }}
+  {{- fail "loadBalancerConfigurations must be a list ([]). See CHANGE_LOG.md" }}
+{{- end }}
 {{- range $i, $lbc := .Values.loadBalancerConfigurations }}
 ---
 apiVersion: gateway.k8s.aws/v1beta1
