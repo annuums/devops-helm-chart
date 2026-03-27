@@ -25,9 +25,7 @@ spec:
       {{- if $listener.hostname }}
       hostname: {{ $listener.hostname }}
       {{- end }}
-      {{- if $listener.port }}
-      port: {{ $listener.port }}
-      {{- end }}
+      port: {{ required (printf "gateway.listeners[%d].port is required" $i) $listener.port }}
       {{- if $listener.allowedRoutes }}
       allowedRoutes:
         {{- if $listener.allowedRoutes.namespaces }}
