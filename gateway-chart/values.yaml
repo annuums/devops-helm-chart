@@ -1,9 +1,19 @@
 fullnameOverride: annuums-gateway
 appVersionSuffix: gateway-chart
-namespace: annuums-gateway
+# namespaceOverride: annuums-gateway
 
 gatewayClass: {}
 
 gateway: {}
 
-httpRoutes: {}
+httpRoutes: []
+
+grpcRoutes: []
+
+tlsRoutes: []
+
+referenceGrants: []
+
+loadBalancerConfigurations: []
+
+targetGroupConfigurations: []
