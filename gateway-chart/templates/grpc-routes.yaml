@@ -1,23 +1,26 @@
-{{- if .Values.grpcRoutes }}
+{{- range .Values.grpcRoutes }}
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
-  name: {{ .Values.grpcRoutes.name }}
-  namespace: {{ template "annuums-gateway.namespace" . }}
+  name: {{ .name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
   labels:
-    {{- include "annuums-gateway.labels" . | nindent 4 }}
-    {{- if .Values.grpcRoutes.labels }}
-    {{- toYaml .Values.grpcRoutes.labels | nindent 4 }}
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{- toYaml .labels | nindent 4 }}
     {{- end }}
-  {{- if .Values.grpcRoutes.annotations }}
+  {{- if .annotations }}
   annotations:
-    {{- toYaml .Values.grpcRoutes.annotations | nindent 4 }}
+    {{- toYaml .annotations | nindent 4 }}
   {{- end }}
 spec:
   parentRefs:
-    {{- toYaml .Values.grpcRoutes.parentRefs | nindent 4 }}
+    {{- toYaml .parentRefs | nindent 4 }}
+  {{- if .hostnames }}
   hostnames:
-    {{- toYaml .Values.grpcRoutes.hostnames | nindent 4 }}
+    {{- toYaml .hostnames | nindent 4 }}
+  {{- end }}
   rules:
-    {{- toYaml .Values.grpcRoutes.rules | nindent 4 }}
+    {{- toYaml .rules | nindent 4 }}
 {{- end }}

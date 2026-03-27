@@ -28,11 +28,18 @@ spec:
       {{- end }}
       {{- if .allowedRoutes }}
       allowedRoutes:
+        {{- if .allowedRoutes.namespaces }}
         namespaces:
-          from: Selector
+          from: {{ .allowedRoutes.namespaces.from }}
+          {{- if .allowedRoutes.namespaces.selector }}
           selector:
-            matchLabels:
-              {{- toYaml .allowedRoutes.matchLabels | nindent 14 }}
+            {{- toYaml .allowedRoutes.namespaces.selector | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if .allowedRoutes.kinds }}
+        kinds:
+          {{- toYaml .allowedRoutes.kinds | nindent 10 }}
+        {{- end }}
       {{- end }}
       {{- if .tls }}
       tls:
@@ -40,4 +47,12 @@ spec:
       {{- end }}
     {{- end }}
     {{- end }}
+  {{- if .Values.gateway.addresses }}
+  addresses:
+    {{- toYaml .Values.gateway.addresses | nindent 4 }}
+  {{- end }}
+  {{- if .Values.gateway.infrastructure }}
+  infrastructure:
+    {{- toYaml .Values.gateway.infrastructure | nindent 4 }}
+  {{- end }}
 {{- end }}

@@ -1,7 +1,7 @@
-{{- range .Values.httpRoutes }}
+{{- range .Values.referenceGrants }}
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
 metadata:
   name: {{ .name }}
   namespace: {{ template "annuums-gateway.namespace" $ }}
@@ -15,12 +15,8 @@ metadata:
     {{- toYaml .annotations | nindent 4 }}
   {{- end }}
 spec:
-  parentRefs:
-    {{- toYaml .parentRefs | nindent 4 }}
-  {{- if .hostnames }}
-  hostnames:
-    {{- toYaml .hostnames | nindent 4 }}
-  {{- end }}
-  rules:
-    {{- toYaml .rules | nindent 4 }}
+  from:
+    {{- toYaml .from | nindent 4 }}
+  to:
+    {{- toYaml .to | nindent 4 }}
 {{- end }}

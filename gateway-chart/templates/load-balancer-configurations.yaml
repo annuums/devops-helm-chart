@@ -1,0 +1,65 @@
+{{- range .Values.loadBalancerConfigurations }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: LoadBalancerConfiguration
+metadata:
+  name: {{ .name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{- toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations }}
+  annotations:
+    {{- toYaml .annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .targetRef }}
+  targetRef:
+    {{- toYaml .targetRef | nindent 4 }}
+  {{- end }}
+  {{- if .scheme }}
+  scheme: {{ .scheme }}
+  {{- end }}
+  {{- if .ipAddressType }}
+  ipAddressType: {{ .ipAddressType }}
+  {{- end }}
+  {{- if .loadBalancerName }}
+  loadBalancerName: {{ .loadBalancerName }}
+  {{- end }}
+  {{- if .loadBalancerSubnets }}
+  loadBalancerSubnets:
+    {{- toYaml .loadBalancerSubnets | nindent 4 }}
+  {{- end }}
+  {{- if .loadBalancerSubnetsSelector }}
+  loadBalancerSubnetsSelector:
+    {{- toYaml .loadBalancerSubnetsSelector | nindent 4 }}
+  {{- end }}
+  {{- if .securityGroups }}
+  securityGroups:
+    {{- toYaml .securityGroups | nindent 4 }}
+  {{- end }}
+  {{- if .sourceRanges }}
+  sourceRanges:
+    {{- toYaml .sourceRanges | nindent 4 }}
+  {{- end }}
+  {{- if .loadBalancerAttributes }}
+  loadBalancerAttributes:
+    {{- toYaml .loadBalancerAttributes | nindent 4 }}
+  {{- end }}
+  {{- if .listenerConfigurations }}
+  listenerConfigurations:
+    {{- toYaml .listenerConfigurations | nindent 4 }}
+  {{- end }}
+  {{- if .tags }}
+  tags:
+    {{- toYaml .tags | nindent 4 }}
+  {{- end }}
+  {{- if .webACL }}
+  webACL: {{ .webACL }}
+  {{- end }}
+  {{- if .mergingMode }}
+  mergingMode: {{ .mergingMode }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,28 @@
+{{- range .Values.targetGroupConfigurations }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: {{ .name }}
+  namespace: {{ template "annuums-gateway.namespace" $ }}
+  labels:
+    {{- include "annuums-gateway.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{- toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations }}
+  annotations:
+    {{- toYaml .annotations | nindent 4 }}
+  {{- end }}
+spec:
+  targetReference:
+    {{- toYaml .targetReference | nindent 4 }}
+  {{- if .defaultConfiguration }}
+  defaultConfiguration:
+    {{- toYaml .defaultConfiguration | nindent 4 }}
+  {{- end }}
+  {{- if .routeConfigurations }}
+  routeConfigurations:
+    {{- toYaml .routeConfigurations | nindent 4 }}
+  {{- end }}
+{{- end }}
