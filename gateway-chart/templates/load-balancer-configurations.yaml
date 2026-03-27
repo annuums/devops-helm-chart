@@ -1,65 +1,65 @@
-{{- range .Values.loadBalancerConfigurations }}
+{{- range $i, $lbc := .Values.loadBalancerConfigurations }}
 ---
 apiVersion: gateway.k8s.aws/v1beta1
 kind: LoadBalancerConfiguration
 metadata:
-  name: {{ .name }}
+  name: {{ required (printf "loadBalancerConfigurations[%d].name is required" $i) $lbc.name }}
   namespace: {{ template "annuums-gateway.namespace" $ }}
   labels:
     {{- include "annuums-gateway.labels" $ | nindent 4 }}
-    {{- if .labels }}
-    {{- toYaml .labels | nindent 4 }}
+    {{- if $lbc.labels }}
+    {{- toYaml $lbc.labels | nindent 4 }}
     {{- end }}
-  {{- if .annotations }}
+  {{- if $lbc.annotations }}
   annotations:
-    {{- toYaml .annotations | nindent 4 }}
+    {{- toYaml $lbc.annotations | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .targetRef }}
+  {{- if $lbc.targetRef }}
   targetRef:
-    {{- toYaml .targetRef | nindent 4 }}
+    {{- toYaml $lbc.targetRef | nindent 4 }}
   {{- end }}
-  {{- if .scheme }}
-  scheme: {{ .scheme }}
+  {{- if $lbc.scheme }}
+  scheme: {{ $lbc.scheme }}
   {{- end }}
-  {{- if .ipAddressType }}
-  ipAddressType: {{ .ipAddressType }}
+  {{- if $lbc.ipAddressType }}
+  ipAddressType: {{ $lbc.ipAddressType }}
   {{- end }}
-  {{- if .loadBalancerName }}
-  loadBalancerName: {{ .loadBalancerName }}
+  {{- if $lbc.loadBalancerName }}
+  loadBalancerName: {{ $lbc.loadBalancerName }}
   {{- end }}
-  {{- if .loadBalancerSubnets }}
+  {{- if $lbc.loadBalancerSubnets }}
   loadBalancerSubnets:
-    {{- toYaml .loadBalancerSubnets | nindent 4 }}
+    {{- toYaml $lbc.loadBalancerSubnets | nindent 4 }}
   {{- end }}
-  {{- if .loadBalancerSubnetsSelector }}
+  {{- if $lbc.loadBalancerSubnetsSelector }}
   loadBalancerSubnetsSelector:
-    {{- toYaml .loadBalancerSubnetsSelector | nindent 4 }}
+    {{- toYaml $lbc.loadBalancerSubnetsSelector | nindent 4 }}
   {{- end }}
-  {{- if .securityGroups }}
+  {{- if $lbc.securityGroups }}
   securityGroups:
-    {{- toYaml .securityGroups | nindent 4 }}
+    {{- toYaml $lbc.securityGroups | nindent 4 }}
   {{- end }}
-  {{- if .sourceRanges }}
+  {{- if $lbc.sourceRanges }}
   sourceRanges:
-    {{- toYaml .sourceRanges | nindent 4 }}
+    {{- toYaml $lbc.sourceRanges | nindent 4 }}
   {{- end }}
-  {{- if .loadBalancerAttributes }}
+  {{- if $lbc.loadBalancerAttributes }}
   loadBalancerAttributes:
-    {{- toYaml .loadBalancerAttributes | nindent 4 }}
+    {{- toYaml $lbc.loadBalancerAttributes | nindent 4 }}
   {{- end }}
-  {{- if .listenerConfigurations }}
+  {{- if $lbc.listenerConfigurations }}
   listenerConfigurations:
-    {{- toYaml .listenerConfigurations | nindent 4 }}
+    {{- toYaml $lbc.listenerConfigurations | nindent 4 }}
   {{- end }}
-  {{- if .tags }}
+  {{- if $lbc.tags }}
   tags:
-    {{- toYaml .tags | nindent 4 }}
+    {{- toYaml $lbc.tags | nindent 4 }}
   {{- end }}
-  {{- if .webACL }}
-  webACL: {{ .webACL }}
+  {{- if $lbc.webACL }}
+  webACL: {{ $lbc.webACL }}
   {{- end }}
-  {{- if .mergingMode }}
-  mergingMode: {{ .mergingMode }}
+  {{- if $lbc.mergingMode }}
+  mergingMode: {{ $lbc.mergingMode }}
   {{- end }}
 {{- end }}

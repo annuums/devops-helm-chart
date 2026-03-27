@@ -1,28 +1,28 @@
-{{- range .Values.targetGroupConfigurations }}
+{{- range $i, $tgc := .Values.targetGroupConfigurations }}
 ---
 apiVersion: gateway.k8s.aws/v1beta1
 kind: TargetGroupConfiguration
 metadata:
-  name: {{ .name }}
+  name: {{ required (printf "targetGroupConfigurations[%d].name is required" $i) $tgc.name }}
   namespace: {{ template "annuums-gateway.namespace" $ }}
   labels:
     {{- include "annuums-gateway.labels" $ | nindent 4 }}
-    {{- if .labels }}
-    {{- toYaml .labels | nindent 4 }}
+    {{- if $tgc.labels }}
+    {{- toYaml $tgc.labels | nindent 4 }}
     {{- end }}
-  {{- if .annotations }}
+  {{- if $tgc.annotations }}
   annotations:
-    {{- toYaml .annotations | nindent 4 }}
+    {{- toYaml $tgc.annotations | nindent 4 }}
   {{- end }}
 spec:
   targetReference:
-    {{- toYaml .targetReference | nindent 4 }}
-  {{- if .defaultConfiguration }}
+    {{- toYaml (required (printf "targetGroupConfigurations[%d].targetReference is required" $i) $tgc.targetReference) | nindent 4 }}
+  {{- if $tgc.defaultConfiguration }}
   defaultConfiguration:
-    {{- toYaml .defaultConfiguration | nindent 4 }}
+    {{- toYaml $tgc.defaultConfiguration | nindent 4 }}
   {{- end }}
-  {{- if .routeConfigurations }}
+  {{- if $tgc.routeConfigurations }}
   routeConfigurations:
-    {{- toYaml .routeConfigurations | nindent 4 }}
+    {{- toYaml $tgc.routeConfigurations | nindent 4 }}
   {{- end }}
 {{- end }}
