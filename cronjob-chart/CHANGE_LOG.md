@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.8
+- fix: cronjob chart service account template referencing wrong chart
+
 ## 0.7.7
 - fix: add missing labels to service account
 
