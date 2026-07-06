@@ -1,0 +1,215 @@
+fullnameOverride: pigeon
+namespace: pigeon
+
+labels:
+  my-label: custom-label
+
+annotations:
+  argocd: hey
+
+serviceSelector:
+  annuums.devops/name: pigeon-custom-selector
+
+serviceAccount:
+  create: true
+  exist: false
+  name: pigeon-sa
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/pigeon-role
+
+imagePullSecrets:
+  - name: my-registry-secret
+
+replicas: 2
+revisionHistoryLimit: 3
+minReadySeconds: 10
+progressDeadlineSeconds: 600
+
+# ----------------------------------------------------------------
+# strategy.type: canary | blueGreen
+# ----------------------------------------------------------------
+strategy:
+  type: canary
+  canary:
+    canaryService: pigeon-canary-svc
+    stableService: pigeon-stable-svc
+    maxSurge: "25%"
+    maxUnavailable: 0
+    trafficRouting:
+      plugins:
+        argoproj-labs/gatewayAPI:
+          httpRoute: pigeon-http-route
+          namespace: pigeon
+    steps:
+      - setWeight: 20
+      - pause: {}
+      - setWeight: 40
+      - pause:
+          duration: 30s
+      - setWeight: 60
+      - pause:
+          duration: 30s
+      - setWeight: 80
+      - pause:
+          duration: 30s
+#    analysis:
+#      templates:
+#        - templateName: success-rate
+#      startingStep: 2
+#      args:
+#        - name: service-name
+#          value: pigeon-canary-svc
+
+# strategy:
+#   type: blueGreen
+#   blueGreen:
+#     activeService: pigeon-active-svc
+#     previewService: pigeon-preview-svc
+#     autoPromotionEnabled: false
+#     autoPromotionSeconds: 30
+#     scaleDownDelaySeconds: 30
+#     prePromotionAnalysis:
+#       templates:
+#         - templateName: success-rate
+#       args:
+#         - name: service-name
+#           value: pigeon-active-svc
+#     postPromotionAnalysis:
+#       templates:
+#         - templateName: success-rate
+
+# ----------------------------------------------------------------
+# Pod Spec
+# ----------------------------------------------------------------
+hostNetwork: false
+restartPolicy: Always
+terminationGracePeriodSeconds: 40
+
+containers:
+  - name: pigeon-app
+    image:
+      repository: nginx
+      tag: 1.27.0
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "nginx -g 'daemon off;'"
+    lifecycle:
+      preStop:
+        exec:
+          command:
+            - "sh"
+            - "-c"
+            - "sleep 15"
+      postStart:
+        exec:
+          command:
+            - "sh"
+    resources:
+      cpu: 250m
+      memory: 256Mi
+    ports:
+      - containerPort: 8080
+        protocol: TCP
+    volumeMounts:
+      - name: hostpath-volume
+        mountPath: /foo
+        subPath: ./foo
+        readOnly: true
+      - name: secret-volume
+        mountPath: /etc/secrets
+        subPath: ""
+        readOnly: true
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 2
+  timeoutSeconds: 3
+
+livenessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 2
+  timeoutSeconds: 3
+
+nodeSelector:
+  type: applications
+  kubernetes.io/architecture: amd64
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: pink-pigeon
+              operator: In
+              values:
+                - king
+                - queen
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: annuums.devops/name
+                operator: In
+                values:
+                  - pigeon-custom-selector
+          topologyKey: kubernetes.io/hostname
+
+tolerations:
+  - key: my-key
+    operator: Equal
+    value: my-value
+    effect: NoSchedule
+
+volumes:
+  - name: hostpath-volume
+    hostPath:
+      path: /host-foo
+      # type: Directory | DirectoryOrCreate | File | FileOrCreate | Socket
+      type: Directory
+  - name: empty-volume
+    emptyDir:
+      sizeLimit: 500Mi
+  - name: secret-volume
+    secretVolume:
+      secretName: pigeon-secret
+  - name: configmap-volume
+    configMapVolume:
+      name: pigeon-config
+  - name: pvc-volume
+    persistentVolumeClaim:
+      name: pigeon-pvc
+
+environment:
+  env:
+    - name: PORT
+      value: "8080"
+    - name: ENV
+      value: "production"
+  secret:
+    - name: DB_PASSWORD
+      ref:
+        name: pigeon-secret
+        key: db-password
+        optional: false
+  configmap:
+    - name: APP_CONFIG
+      ref:
+        name: pigeon-config
+        key: app.yaml
+  envFrom:
+    - type: configmap
+      configMapRefName: pigeon-common-config
+    - type: secret
+      secretRefName: pigeon-common-secret
