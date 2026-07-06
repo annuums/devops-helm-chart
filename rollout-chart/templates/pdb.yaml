@@ -1,0 +1,43 @@
+{{- with .Values.containers }}
+  {{- range . }}
+  {{- if and .pdb .pdb.enabled }}
+
+  {{- if .pdb.maxUnavailable }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-pdb-max-unavailable
+  namespace: {{ template "annuums-rollout.namespace" $ }}
+spec:
+  maxUnavailable: {{ .pdb.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- if $.Values.serviceSelector }}
+      {{- toYaml $.Values.serviceSelector | nindent 6 }}
+      {{- else }}
+      annuums.devops/name: {{ include "annuums-rollout.fullname" $ }}-selector
+      {{- end }}
+  {{- end }}
+
+  {{- if .pdb.minAvailable }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}-pdb-min-available
+  namespace: {{ template "annuums-rollout.namespace" $ }}
+spec:
+  minAvailable: {{ .pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- if $.Values.serviceSelector }}
+      {{- toYaml $.Values.serviceSelector | nindent 6 }}
+      {{- else }}
+      annuums.devops/name: {{ include "annuums-rollout.fullname" $ }}-selector
+      {{- end }}
+  {{- end }}
+
+  {{- end }}
+  {{- end }}
+{{- end }}
