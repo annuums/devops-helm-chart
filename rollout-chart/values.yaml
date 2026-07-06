@@ -1,0 +1,80 @@
+fullnameOverride: annuums-rollout
+appVersionSuffix: rollout-chart
+
+serviceAccount:
+  create: false
+
+labels: {}
+
+# -- strategy.type: canary | blueGreen
+strategy:
+  type: canary
+
+  canary:
+    # canaryService: ""
+    # stableService: ""
+    maxSurge: "25%"
+    maxUnavailable: 0
+    steps:
+      - setWeight: 20
+      - pause: {}
+      - setWeight: 40
+      - pause:
+          duration: 30s
+      - setWeight: 60
+      - pause:
+          duration: 30s
+      - setWeight: 80
+      - pause:
+          duration: 30s
+    # trafficRouting:
+    #   plugins:
+    #     argoproj-labs/gatewayAPI:
+    #       httpRoute: my-http-route
+    #       namespace: my-namespace
+    # analysis:
+    #   templates:
+    #     - templateName: success-rate
+    #   startingStep: 2
+    #   args:
+    #     - name: service-name
+    #       value: my-service
+
+  blueGreen:
+    activeService: ""
+    # previewService: ""
+    autoPromotionEnabled: false
+    # autoPromotionSeconds: 30
+    # scaleDownDelaySeconds: 30
+    # prePromotionAnalysis:
+    #   templates:
+    #     - templateName: success-rate
+    #   args:
+    #     - name: service-name
+    #       value: my-service
+    # postPromotionAnalysis:
+    #   templates:
+    #     - templateName: success-rate
+
+autoscaling:
+  enabled: false
+  hpa: {}
+  keda: {}
+
+replicas: 1
+revisionHistoryLimit: 3
+
+terminationGracePeriodSeconds: 30
+
+containers: []
+
+nodeSelector: {}
+
+startupProbe: {}
+readinessProbe: {}
+livenessProbe: {}
+
+volumeMounts: []
+volumes: []
+affinity: {}
+tolerations: []

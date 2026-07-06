@@ -1,0 +1,5 @@
+apiVersion: v2
+description: A Helm chart for Argo Rollouts (v1.9.0) in Annuums
+name: rollout-chart
+type: application
+version: 0.0.0
