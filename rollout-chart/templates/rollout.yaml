@@ -1,0 +1,312 @@
+# Validate strategy Passed {{- include "validate.rolloutStrategy" . }}
+# Validate blueGreen Passed {{- include "validate.blueGreenActiveService" . }}
+# Validate canary trafficRouting Passed {{- include "validate.canaryTrafficRouting" . }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ template "annuums-rollout.fullname" . }}
+  namespace: {{ template "annuums-rollout.namespace" . }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    annuums.obs/version: {{ template "annuums-rollout.chart" . }}
+    {{- include "annuums-rollout.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+    {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ ternary .Values.replicas 1 (hasKey .Values "replicas") }}
+  {{- end }}
+  revisionHistoryLimit: {{ default 3 .Values.revisionHistoryLimit }}
+  {{- if .Values.minReadySeconds }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  {{- end }}
+  {{- if .Values.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  {{- end }}
+  {{- if .Values.paused }}
+  paused: {{ .Values.paused }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- if .Values.serviceSelector }}
+      {{- toYaml .Values.serviceSelector | nindent 6 }}
+      {{- else }}
+      annuums.devops/name: {{ include "annuums-rollout.fullname" . }}-selector
+      {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "annuums-rollout.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+        {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+      {{- if .Values.annotations }}
+      annotations:
+        {{- toYaml .Values.annotations | nindent 8 }}
+      {{- end }}
+    spec:
+      hostNetwork: {{ default false .Values.hostNetwork }}
+      {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- with .Values.tolerations }}
+        {{- range . }}
+        - key: {{ .key }}
+          value: {{ .value | quote }}
+          operator: {{ .operator }}
+          effect: {{ .effect }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      restartPolicy: {{ default "Always" .Values.restartPolicy }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+      {{- with .Values.containers }}
+        {{- range . }}
+        - name: {{ .name }}
+          image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
+          {{- if .lifecycle }}
+          lifecycle:
+            {{- if .lifecycle.preStop }}
+            preStop:
+              exec:
+                command:
+                {{- toYaml .lifecycle.preStop.exec.command | nindent 16 }}
+            {{- end }}
+            {{- if .lifecycle.postStart }}
+            postStart:
+              exec:
+                command:
+                {{- toYaml .lifecycle.postStart.exec.command | nindent 16 }}
+            {{- end }}
+          {{- end }}
+          {{- if .command }}
+          command:
+            {{- toYaml .command | nindent 12 }}
+          {{- end }}
+          {{- if .args }}
+          args:
+            {{- toYaml .args | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.environment }}
+          {{- if or .env .secret .configmap }}
+          env:
+            {{- if .env }}
+              {{- toYaml .env | nindent 12 }}
+            {{- end }}
+            {{- if .secret }}
+            {{- range .secret }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .ref.name }}
+                  key: {{ .ref.key }}
+                  optional: {{ default false .ref.optional }}
+            {{- end }}
+            {{- end }}
+            {{- if .configmap }}
+            {{- range .configmap }}
+            - name: {{ .name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .ref.name }}
+                  key: {{ .ref.key }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if .envFrom }}
+          envFrom:
+          {{- range .envFrom }}
+            {{- if eq .type "configmap" }}
+            - configMapRef:
+                name: {{ .configMapRefName }}
+            {{- end }}
+            {{- if eq .type "secret" }}
+            - secretRef:
+                name: {{ .secretRefName }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with .volumeMounts }}
+          volumeMounts:
+          {{- range . }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- end }}
+          resources:
+          {{- if .resources }}
+            requests:
+              cpu: {{ .resources.cpu }}
+              memory: {{ .resources.memory }}
+            limits:
+              cpu: {{ .resources.cpu }}
+              memory: {{ .resources.memory }}
+          {{- else }}
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          {{- end }}
+          {{- with .ports }}
+          ports:
+          {{- range . }}
+            - containerPort: {{ .containerPort }}
+              protocol: {{ .protocol }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+          {{- if .Values.startupProbe }}
+          startupProbe:
+            {{- if .Values.startupProbe.httpGet }}
+            httpGet:
+              path: {{ default "/" .Values.startupProbe.httpGet.path }}
+              port: {{ .Values.startupProbe.httpGet.port }}
+            {{- end }}
+            {{- if .Values.startupProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.startupProbe.tcpSocket.port }}
+            {{- end }}
+            initialDelaySeconds: {{ default 0 .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 10 .Values.startupProbe.periodSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ default 30 .Values.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ default 1 .Values.startupProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- if .Values.livenessProbe.httpGet }}
+            httpGet:
+              path: {{ default "/" .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            {{- end }}
+            {{- if .Values.livenessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.livenessProbe.tcpSocket.port }}
+            {{- end }}
+            initialDelaySeconds: {{ default 5 .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 5 .Values.livenessProbe.periodSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ default 2 .Values.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ default 3 .Values.livenessProbe.timeoutSeconds }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- if .Values.readinessProbe.httpGet }}
+            httpGet:
+              path: {{ default "/" .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            {{- end }}
+            {{- if .Values.readinessProbe.tcpSocket }}
+            tcpSocket:
+              port: {{ .Values.readinessProbe.tcpSocket.port }}
+            {{- end }}
+            initialDelaySeconds: {{ default 5 .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 5 .Values.readinessProbe.periodSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ default 2 .Values.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ default 3 .Values.readinessProbe.timeoutSeconds }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- range . }}
+        - name: {{ .name }}
+          {{- if .hostPath }}
+          hostPath:
+            path: {{ .hostPath.path }}
+            type: {{ .hostPath.type }}
+          {{- end }}
+          {{- if .emptyDir }}
+          emptyDir:
+            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- end }}
+          {{- if .secretVolume }}
+          secret:
+            secretName: {{ .secretVolume.secretName }}
+          {{- end }}
+          {{- if .configMapVolume }}
+          configMap:
+            name: {{ .configMapVolume.name }}
+          {{- end }}
+          {{- if .persistentVolumeClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .persistentVolumeClaim.name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+  strategy:
+    {{- if eq .Values.strategy.type "canary" }}
+    canary:
+      {{- if .Values.strategy.canary.canaryService }}
+      canaryService: {{ .Values.strategy.canary.canaryService }}
+      {{- end }}
+      {{- if .Values.strategy.canary.stableService }}
+      stableService: {{ .Values.strategy.canary.stableService }}
+      {{- end }}
+      maxSurge: {{ .Values.strategy.canary.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.canary.maxUnavailable }}
+      {{- if .Values.strategy.canary.trafficRouting }}
+      trafficRouting:
+        {{- toYaml .Values.strategy.canary.trafficRouting | nindent 8 }}
+      {{- end }}
+      {{- if .Values.strategy.canary.analysis }}
+      analysis:
+        {{- toYaml .Values.strategy.canary.analysis | nindent 8 }}
+      {{- end }}
+      {{- if .Values.strategy.canary.steps }}
+      steps:
+        {{- toYaml .Values.strategy.canary.steps | nindent 8 }}
+      {{- end }}
+    {{- else if eq .Values.strategy.type "blueGreen" }}
+    blueGreen:
+      activeService: {{ .Values.strategy.blueGreen.activeService }}
+      {{- if .Values.strategy.blueGreen.previewService }}
+      previewService: {{ .Values.strategy.blueGreen.previewService }}
+      {{- end }}
+      autoPromotionEnabled: {{ default false .Values.strategy.blueGreen.autoPromotionEnabled }}
+      {{- if .Values.strategy.blueGreen.autoPromotionSeconds }}
+      autoPromotionSeconds: {{ .Values.strategy.blueGreen.autoPromotionSeconds }}
+      {{- end }}
+      {{- if .Values.strategy.blueGreen.scaleDownDelaySeconds }}
+      scaleDownDelaySeconds: {{ .Values.strategy.blueGreen.scaleDownDelaySeconds }}
+      {{- end }}
+      {{- if .Values.strategy.blueGreen.prePromotionAnalysis }}
+      prePromotionAnalysis:
+        {{- toYaml .Values.strategy.blueGreen.prePromotionAnalysis | nindent 8 }}
+      {{- end }}
+      {{- if .Values.strategy.blueGreen.postPromotionAnalysis }}
+      postPromotionAnalysis:
+        {{- toYaml .Values.strategy.blueGreen.postPromotionAnalysis | nindent 8 }}
+      {{- end }}
+      {{- if .Values.strategy.blueGreen.antiAffinity }}
+      antiAffinity:
+        {{- toYaml .Values.strategy.blueGreen.antiAffinity | nindent 8 }}
+      {{- end }}
+    {{- end }}
