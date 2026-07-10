@@ -21,6 +21,21 @@ imagePullSecrets:
 annotations:
   annuums.devops/pigeon: pigeon
 
+initContainers:
+  - name: init-wait-dependency
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "until nc -z api-service 8080; do echo waiting for api; sleep 2; done"
+    resources:
+      cpu: 50m
+      memory: 64Mi
+
 cronjob:
   name: pigeon-cron-job
   schedule: "* * * * *"

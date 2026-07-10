@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.15.5
+
+- feat: support initContainers
+
 ## 0.15.4
 - fix: support `replicas: 0`
 

@@ -22,6 +22,7 @@ autoscaling:
   hpa: {}
   keda: {}
 
+initContainers: []
 containers: []
 
 replicas: 1

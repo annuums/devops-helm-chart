@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.7.9
+
+- feat: support initContainers
+
 ## 0.7.8
 - fix: cronjob chart service account template referencing wrong chart
 

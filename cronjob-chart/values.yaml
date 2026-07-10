@@ -7,6 +7,7 @@ serviceAccount:
 
 labels: {}
 
+initContainers: []
 cronjob: {}
 
 affinity: {}
