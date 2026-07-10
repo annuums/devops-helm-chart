@@ -88,6 +88,39 @@ serviceAccount:
 
 hostNetwork: false
 
+initContainers:
+  - name: init-migration
+    image:
+      repository: first-rep
+      tag: 1.0.0
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "python manage.py migrate"
+    volumeMounts:
+      - name: hostpath-volume
+        mountPath: /foo
+        subPath: ./foo
+        readOnly: false
+    resources:
+      cpu: 100m
+      memory: 128Mi
+  - name: init-wait-db
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "until nc -z db-service 5432; do echo waiting for db; sleep 2; done"
+    resources:
+      cpu: 50m
+      memory: 64Mi
+
 containers:
   - name: pigeon-1
     pdb:

@@ -85,6 +85,26 @@ hostNetwork: false
 restartPolicy: Always
 terminationGracePeriodSeconds: 40
 
+initContainers:
+  - name: init-migration
+    image:
+      repository: nginx
+      tag: 1.27.0
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "python manage.py migrate"
+    volumeMounts:
+      - name: hostpath-volume
+        mountPath: /foo
+        subPath: ./foo
+        readOnly: false
+    resources:
+      cpu: 100m
+      memory: 128Mi
+
 containers:
   - name: pigeon-app
     image:
