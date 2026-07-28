@@ -18,6 +18,15 @@ metadata:
     {{- end }}
 spec:
   schedule: {{ .Values.cronjob.schedule | quote }}
+  {{- if .Values.cronjob.timeZone }}
+  timeZone: {{ .Values.cronjob.timeZone | quote }}
+  {{- end }}
+  {{- if .Values.cronjob.concurrencyPolicy }}
+  concurrencyPolicy: {{ .Values.cronjob.concurrencyPolicy }}
+  {{- end }}
+  {{- if .Values.cronjob.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ .Values.cronjob.startingDeadlineSeconds }}
+  {{- end }}
   successfulJobsHistoryLimit: {{ default 1 .Values.cronjob.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ default 1 .Values.cronjob.failedJobsHistoryLimit }}
   jobTemplate:
