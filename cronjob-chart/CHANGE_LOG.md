@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.7.10
+- feat: support `timeZone`, `concurrencyPolicy`, `startingDeadlineSeconds`
+  - Example:
+    ```yaml
+    cronjob:
+      timeZone: "Asia/Seoul"
+      concurrencyPolicy: Forbid # Allow | Forbid | Replace
+      startingDeadlineSeconds: 60
+    ```
+
 ## 0.7.9
 
 - feat: support initContainers

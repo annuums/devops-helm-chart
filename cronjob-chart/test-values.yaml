@@ -39,6 +39,9 @@ initContainers:
 cronjob:
   name: pigeon-cron-job
   schedule: "* * * * *"
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
   backoffLimit: 0
   activeDeadlineSeconds: 600
   successfulJobsHistoryLimit: 2
