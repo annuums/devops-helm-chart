@@ -1,5 +1,17 @@
 # Change Log
 
+## 0.7.11
+
+- feat: support `lifecycle` on job containers
+  - `exec` and `sleep` handlers, `postStart` and `preStop` hooks
+  - `sleep` runs in the kubelet, so the image needs no shell and no `sleep` binary (works on distroless/scratch); requires Kubernetes 1.30+, or 1.29 with the `PodLifecycleSleepAction` feature gate
+  - note: `preStop` does not run when a job container exits on its own. It fires only when the kubelet terminates the pod (eviction, node drain, `activeDeadlineSeconds`, deletion)
+  - an unsupported handler (`httpGet`, `tcpSocket`), a missing handler, `exec` without `command`, `sleep` without `seconds` and a misspelled hook name are rejected at render time
+- feat: support `lifecycle` on init containers
+  - Kubernetes only allows it on sidecar init containers, so `initContainers[].restartPolicy: Always` is required
+- feat: support `initContainers[].restartPolicy`
+  - `Always` is the only value Kubernetes accepts for init containers; anything else is rejected at render time
+
 ## 0.7.10
 - feat: support `timeZone`, `concurrencyPolicy`, `startingDeadlineSeconds`
   - Example:
