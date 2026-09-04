@@ -35,6 +35,30 @@ initContainers:
     resources:
       cpu: 50m
       memory: 64Mi
+  - name: init-sidecar-log-shipper
+    restartPolicy: Always
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "tail -f /dev/null"
+    lifecycle:
+      preStop:
+        sleep:
+          seconds: 5
+      postStart:
+        exec:
+          command:
+            - "sh"
+            - "-c"
+            - "echo sidecar started"
+    resources:
+      cpu: 50m
+      memory: 64Mi
 
 cronjob:
   name: pigeon-cron-job
@@ -52,6 +76,10 @@ cronjob:
         tag: 1.0.0
         pullPolicy: Never
       name: pigeon-container
+      lifecycle:
+        preStop:
+          sleep:
+            seconds: 10
       labels:
         test-label: "pigeon-1"
         test-label-another: "pigeon-another"
@@ -79,6 +107,19 @@ cronjob:
         tag: 1.0.0
         pullPolicy: Never
       name: pigeon-another-container # pigeon-container will occur error for duplicate name
+      lifecycle:
+        preStop:
+          exec:
+            command:
+              - "sh"
+              - "-c"
+              - "sleep 10"
+        postStart:
+          exec:
+            command:
+              - "sh"
+              - "-c"
+              - "echo started"
       labels:
         test-label: "pigeon-1"
         test-label-another: "pigeon-another"

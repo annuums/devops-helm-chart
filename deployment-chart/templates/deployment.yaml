@@ -1,3 +1,4 @@
+# Check init container lifecycle Passed {{- include "validate.initContainerLifecycle" . }}
 # Check autoscaling Passed {{- include "validate.autoscaling" . }}
 apiVersion: apps/v1
 kind: Deployment
@@ -84,6 +85,12 @@ spec:
         - name: {{ .name }}
           image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
           imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
+          {{- if .restartPolicy }}
+          restartPolicy: {{ .restartPolicy }}
+          {{- end }}
+          {{- if .lifecycle }}
+          {{- include "annuums-deployment.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
+          {{- end }}
           {{- if .command }}
           command:
             {{- toYaml .command | nindent 12 }}
@@ -166,19 +173,7 @@ spec:
           image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
           imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
           {{- if .lifecycle }}
-          lifecycle:
-            {{- if .lifecycle.preStop }}
-            preStop:
-              exec:
-                command:
-                {{- toYaml .lifecycle.preStop.exec.command | nindent 16 }}
-            {{- end }}
-            {{- if .lifecycle.postStart }}
-            postStart:
-              exec:
-                command:
-                {{- toYaml .lifecycle.postStart.exec.command | nindent 16 }}
-            {{- end }}
+          {{- include "annuums-deployment.lifecycle" (dict "name" (printf "containers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:

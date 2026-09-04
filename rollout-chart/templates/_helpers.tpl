@@ -99,3 +99,72 @@ Validate canary trafficRouting requires canaryService and stableService
   {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Render a single lifecycle handler.
+Only `exec` and `sleep` are supported; `httpGet` and `tcpSocket` are not.
+Input: dict "name" <container name> "hook" <postStart|preStop> "handler" <handler map>
+*/}}
+{{- define "annuums-rollout.lifecycleHandler" -}}
+{{- $name := .name -}}
+{{- $hook := .hook -}}
+{{- $handler := default dict .handler -}}
+{{- if and (hasKey $handler "exec") (hasKey $handler "sleep") -}}
+  {{- fail (printf "Error: %s.lifecycle.%s has both 'exec' and 'sleep' set. Please set only one." $name $hook) -}}
+{{- end -}}
+{{- if hasKey $handler "exec" -}}
+{{- $exec := default dict $handler.exec -}}
+{{- if not $exec.command -}}
+  {{- fail (printf "Error: %s.lifecycle.%s.exec.command is required." $name $hook) -}}
+{{- end -}}
+exec:
+  command:
+    {{- toYaml $exec.command | nindent 4 }}
+{{- else if hasKey $handler "sleep" -}}
+{{- $sleep := default dict $handler.sleep -}}
+{{- if not $sleep.seconds -}}
+  {{- fail (printf "Error: %s.lifecycle.%s.sleep.seconds is required and must be greater than 0." $name $hook) -}}
+{{- end -}}
+sleep:
+  seconds: {{ int $sleep.seconds }}
+{{- else -}}
+  {{- fail (printf "Error: %s.lifecycle.%s must set one of 'exec' or 'sleep'." $name $hook) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render the lifecycle block of a container.
+Input: dict "name" <container name> "lifecycle" <lifecycle map>
+*/}}
+{{- define "annuums-rollout.lifecycle" -}}
+{{- $name := .name -}}
+{{- $lifecycle := .lifecycle -}}
+{{- range $hook, $_ := $lifecycle -}}
+  {{- if not (has $hook (list "postStart" "preStop")) -}}
+    {{- fail (printf "Error: %s.lifecycle.%s is not a supported hook. Please use 'postStart' or 'preStop'." $name $hook) -}}
+  {{- end -}}
+{{- end -}}
+lifecycle:
+  {{- if hasKey $lifecycle "postStart" }}
+  postStart:
+    {{- include "annuums-rollout.lifecycleHandler" (dict "name" $name "hook" "postStart" "handler" $lifecycle.postStart) | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $lifecycle "preStop" }}
+  preStop:
+    {{- include "annuums-rollout.lifecycleHandler" (dict "name" $name "hook" "preStop" "handler" $lifecycle.preStop) | nindent 4 }}
+  {{- end }}
+{{- end -}}
+
+{{/*
+Check init container restartPolicy, and that lifecycle is only set on sidecar init containers.
+*/}}
+{{- define "validate.initContainerLifecycle" -}}
+{{- range $i, $c := .Values.initContainers }}
+  {{- if and $c.restartPolicy (ne $c.restartPolicy "Always") }}
+    {{- fail (printf "Error: initContainers[%d].restartPolicy=%v. Only 'Always' is allowed for init containers." $i $c.restartPolicy) -}}
+  {{- end }}
+  {{- if and $c.lifecycle (ne (default "" $c.restartPolicy) "Always") }}
+    {{- fail (printf "Error: initContainers[%d].lifecycle is set but restartPolicy is not 'Always'. lifecycle is only allowed on sidecar init containers." $i) -}}
+  {{- end }}
+{{- end }}
+{{- end -}}

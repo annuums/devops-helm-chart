@@ -1,5 +1,6 @@
 ---
 # Unique Name Check Passed {{- include "cronjob.checkUniqueContainerNames" . }}
+# Check init container lifecycle Passed {{- include "validate.initContainerLifecycle" . }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -81,6 +82,12 @@ spec:
             - name: {{ .name }}
               image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
               imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
+              {{- if .restartPolicy }}
+              restartPolicy: {{ .restartPolicy }}
+              {{- end }}
+              {{- if .lifecycle }}
+              {{- include "annuums-cronjob.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 14 }}
+              {{- end }}
               {{- if .command }}
               command:
                 {{- toYaml .command | nindent 16 }}
@@ -162,6 +169,9 @@ spec:
             - name: {{ $container.name }} # {{ printf "%s-%d" $.Values.cronjob.name $index }}
               image: {{ printf "%s:%s" $container.image.repository $container.image.tag | quote }}
               imagePullPolicy: {{ default "IfNotPresent" $container.image.pullPolicy }}
+              {{- if $container.lifecycle }}
+              {{- include "annuums-cronjob.lifecycle" (dict "name" (printf "cronjob.containers[%s]" $container.name) "lifecycle" $container.lifecycle) | nindent 14 }}
+              {{- end }}
               {{- with $.Values.environment }}
               {{- if or .env .secret .configmap }}
               env:
