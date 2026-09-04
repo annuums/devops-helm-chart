@@ -99,3 +99,48 @@ Validate canary trafficRouting requires canaryService and stableService
   {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Render a single lifecycle handler.
+Only `exec` is supported; `httpGet` and `tcpSocket` are not.
+Input: dict "name" <container name> "hook" <postStart|preStop> "handler" <handler map>
+*/}}
+{{- define "annuums-rollout.lifecycleHandler" -}}
+{{- $name := .name -}}
+{{- $hook := .hook -}}
+{{- $handler := default dict .handler -}}
+{{- if hasKey $handler "exec" -}}
+{{- $exec := default dict $handler.exec -}}
+{{- if not $exec.command -}}
+  {{- fail (printf "Error: %s.lifecycle.%s.exec.command is required." $name $hook) -}}
+{{- end -}}
+exec:
+  command:
+    {{- toYaml $exec.command | nindent 4 }}
+{{- else -}}
+  {{- fail (printf "Error: %s.lifecycle.%s must set 'exec'." $name $hook) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render the lifecycle block of a container.
+Input: dict "name" <container name> "lifecycle" <lifecycle map>
+*/}}
+{{- define "annuums-rollout.lifecycle" -}}
+{{- $name := .name -}}
+{{- $lifecycle := .lifecycle -}}
+{{- range $hook, $_ := $lifecycle -}}
+  {{- if not (has $hook (list "postStart" "preStop")) -}}
+    {{- fail (printf "Error: %s.lifecycle.%s is not a supported hook. Please use 'postStart' or 'preStop'." $name $hook) -}}
+  {{- end -}}
+{{- end -}}
+lifecycle:
+  {{- if hasKey $lifecycle "postStart" }}
+  postStart:
+    {{- include "annuums-rollout.lifecycleHandler" (dict "name" $name "hook" "postStart" "handler" $lifecycle.postStart) | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $lifecycle "preStop" }}
+  preStop:
+    {{- include "annuums-rollout.lifecycleHandler" (dict "name" $name "hook" "preStop" "handler" $lifecycle.preStop) | nindent 4 }}
+  {{- end }}
+{{- end -}}

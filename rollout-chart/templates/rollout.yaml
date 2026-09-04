@@ -168,19 +168,7 @@ spec:
           image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
           imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
           {{- if .lifecycle }}
-          lifecycle:
-            {{- if .lifecycle.preStop }}
-            preStop:
-              exec:
-                command:
-                {{- toYaml .lifecycle.preStop.exec.command | nindent 16 }}
-            {{- end }}
-            {{- if .lifecycle.postStart }}
-            postStart:
-              exec:
-                command:
-                {{- toYaml .lifecycle.postStart.exec.command | nindent 16 }}
-            {{- end }}
+          {{- include "annuums-rollout.lifecycle" (dict "name" (printf "containers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
