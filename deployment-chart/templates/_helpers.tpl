@@ -101,13 +101,16 @@ Check if hpa and keda is defined together
 
 {{/*
 Render a single lifecycle handler.
-Only `exec` is supported; `httpGet` and `tcpSocket` are not.
+Only `exec` and `sleep` are supported; `httpGet` and `tcpSocket` are not.
 Input: dict "name" <container name> "hook" <postStart|preStop> "handler" <handler map>
 */}}
 {{- define "annuums-deployment.lifecycleHandler" -}}
 {{- $name := .name -}}
 {{- $hook := .hook -}}
 {{- $handler := default dict .handler -}}
+{{- if and (hasKey $handler "exec") (hasKey $handler "sleep") -}}
+  {{- fail (printf "Error: %s.lifecycle.%s has both 'exec' and 'sleep' set. Please set only one." $name $hook) -}}
+{{- end -}}
 {{- if hasKey $handler "exec" -}}
 {{- $exec := default dict $handler.exec -}}
 {{- if not $exec.command -}}
@@ -116,8 +119,15 @@ Input: dict "name" <container name> "hook" <postStart|preStop> "handler" <handle
 exec:
   command:
     {{- toYaml $exec.command | nindent 4 }}
+{{- else if hasKey $handler "sleep" -}}
+{{- $sleep := default dict $handler.sleep -}}
+{{- if not $sleep.seconds -}}
+  {{- fail (printf "Error: %s.lifecycle.%s.sleep.seconds is required and must be greater than 0." $name $hook) -}}
+{{- end -}}
+sleep:
+  seconds: {{ int $sleep.seconds }}
 {{- else -}}
-  {{- fail (printf "Error: %s.lifecycle.%s must set 'exec'." $name $hook) -}}
+  {{- fail (printf "Error: %s.lifecycle.%s must set one of 'exec' or 'sleep'." $name $hook) -}}
 {{- end -}}
 {{- end -}}
 
