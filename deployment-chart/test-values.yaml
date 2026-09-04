@@ -120,6 +120,30 @@ initContainers:
     resources:
       cpu: 50m
       memory: 64Mi
+  - name: init-sidecar-log-shipper
+    restartPolicy: Always
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "tail -f /dev/null"
+    lifecycle:
+      preStop:
+        sleep:
+          seconds: 5
+      postStart:
+        exec:
+          command:
+            - "sh"
+            - "-c"
+            - "echo sidecar started"
+    resources:
+      cpu: 50m
+      memory: 64Mi
 
 containers:
   - name: pigeon-1

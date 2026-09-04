@@ -11,6 +11,10 @@
   - requires Kubernetes 1.30+, or 1.29 with the `PodLifecycleSleepAction` feature gate
   - `seconds: 0` is rejected; it needs the separate `PodLifecycleSleepActionAllowZero` gate
   - `exec` and `sleep` cannot be set on the same hook
+- feat: support `lifecycle` on init containers
+  - Kubernetes only allows it on sidecar init containers, so `initContainers[].restartPolicy: Always` is required
+- feat: support `initContainers[].restartPolicy`
+  - `Always` is the only value Kubernetes accepts for init containers; anything else is rejected at render time
 
 ## 0.15.5
 

@@ -154,3 +154,17 @@ lifecycle:
     {{- include "annuums-rollout.lifecycleHandler" (dict "name" $name "hook" "preStop" "handler" $lifecycle.preStop) | nindent 4 }}
   {{- end }}
 {{- end -}}
+
+{{/*
+Check init container restartPolicy, and that lifecycle is only set on sidecar init containers.
+*/}}
+{{- define "validate.initContainerLifecycle" -}}
+{{- range $i, $c := .Values.initContainers }}
+  {{- if and $c.restartPolicy (ne $c.restartPolicy "Always") }}
+    {{- fail (printf "Error: initContainers[%d].restartPolicy=%v. Only 'Always' is allowed for init containers." $i $c.restartPolicy) -}}
+  {{- end }}
+  {{- if and $c.lifecycle (ne (default "" $c.restartPolicy) "Always") }}
+    {{- fail (printf "Error: initContainers[%d].lifecycle is set but restartPolicy is not 'Always'. lifecycle is only allowed on sidecar init containers." $i) -}}
+  {{- end }}
+{{- end }}
+{{- end -}}
