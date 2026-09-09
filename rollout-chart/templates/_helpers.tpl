@@ -203,14 +203,23 @@ runs in its own user namespace.
 
 {{/*
 Check every securityContext is a map, and reject an effective (pod merged with
-container) securityContext that sets `runAsNonRoot: true` together with
-`runAsUser: 0`. The API server accepts that combination, but the kubelet fails
-the container at start with CreateContainerConfigError.
+`defaultContainerSecurityContext` merged with container) securityContext that
+sets `runAsNonRoot: true` together with `runAsUser: 0`. The API server accepts
+that combination, but the kubelet fails the container at start with
+CreateContainerConfigError.
 */}}
 {{- define "validate.securityContext" -}}
 {{- $pod := default dict .Values.securityContext -}}
 {{- if not (kindIs "map" $pod) }}
   {{- fail (printf "Error: securityContext must be a map, but got '%v'." $pod) -}}
+{{- end }}
+{{- $default := default dict .Values.defaultContainerSecurityContext -}}
+{{- if not (kindIs "map" $default) }}
+  {{- fail (printf "Error: defaultContainerSecurityContext must be a map, but got '%v'." $default) -}}
+{{- end }}
+{{- if $default }}
+  {{/* Render it once so an unsupported key is rejected even with no containers defined. */}}
+  {{- $_ := include "annuums-rollout.containerSecurityContext" (dict "path" "defaultContainerSecurityContext" "securityContext" $default) }}
 {{- end }}
 {{- $groups := dict "initContainers" (default list .Values.initContainers) "containers" (default list .Values.containers) -}}
 {{- range $path, $containers := $groups }}
@@ -221,8 +230,10 @@ the container at start with CreateContainerConfigError.
       {{- fail (printf "Error: %s[%s].securityContext must be a map, but got '%v'." $path $name $ctx) -}}
     {{- end }}
     {{- $nonRoot := $pod.runAsNonRoot }}
+    {{- if hasKey $default "runAsNonRoot" }}{{- $nonRoot = $default.runAsNonRoot }}{{- end }}
     {{- if hasKey $ctx "runAsNonRoot" }}{{- $nonRoot = $ctx.runAsNonRoot }}{{- end }}
     {{- $user := $pod.runAsUser }}
+    {{- if hasKey $default "runAsUser" }}{{- $user = $default.runAsUser }}{{- end }}
     {{- if hasKey $ctx "runAsUser" }}{{- $user = $ctx.runAsUser }}{{- end }}
     {{- if and $nonRoot (not (kindIs "invalid" $user)) (not (kindIs "bool" $user)) }}
       {{- if eq (int $user) 0 }}
@@ -337,22 +348,24 @@ securityContext:
 Render a container-level securityContext block.
 Supports `runAsNonRoot`, `runAsUser`, `runAsGroup`, `capabilities`,
 `allowPrivilegeEscalation`, `seccompProfile` and `readOnlyRootFilesystem`.
-Input: dict "name" <container name> "securityContext" <securityContext map>
+`path` overrides the values path used in error messages; it defaults to
+`<name>.securityContext`.
+Input: dict "name" <container name> "securityContext" <securityContext map> ["path" <values path>]
 */}}
 {{- define "annuums-rollout.containerSecurityContext" -}}
-{{- $name := .name -}}
 {{- $ctx := .securityContext -}}
+{{- $path := default (printf "%s.securityContext" .name) .path -}}
 {{- $allowed := list "runAsNonRoot" "runAsUser" "runAsGroup" "capabilities" "allowPrivilegeEscalation" "seccompProfile" "readOnlyRootFilesystem" -}}
 {{- range $key, $_ := $ctx -}}
   {{- if not (has $key $allowed) -}}
-    {{- fail (printf "Error: %s.securityContext.%s is not supported. Please use one of %s." $name $key (join ", " $allowed)) -}}
+    {{- fail (printf "Error: %s.%s is not supported. Please use one of %s." $path $key (join ", " $allowed)) -}}
   {{- end -}}
 {{- end -}}
 {{- if hasKey $ctx "capabilities" -}}
-  {{- include "annuums-rollout.validateCapabilities" (dict "path" (printf "%s.securityContext" $name) "capabilities" $ctx.capabilities) -}}
+  {{- include "annuums-rollout.validateCapabilities" (dict "path" $path "capabilities" $ctx.capabilities) -}}
 {{- end -}}
 {{- if hasKey $ctx "seccompProfile" -}}
-  {{- include "annuums-rollout.validateSeccompProfile" (dict "path" (printf "%s.securityContext" $name) "seccompProfile" $ctx.seccompProfile) -}}
+  {{- include "annuums-rollout.validateSeccompProfile" (dict "path" $path "seccompProfile" $ctx.seccompProfile) -}}
 {{- end -}}
 securityContext:
   {{- if hasKey $ctx "runAsNonRoot" }}
@@ -378,4 +391,94 @@ securityContext:
   seccompProfile:
     {{- toYaml $ctx.seccompProfile | nindent 4 }}
   {{- end }}
+{{- end -}}
+
+{{/*
+Merge `defaultContainerSecurityContext` with a container's own `securityContext`
+and render the result. The merge is per top-level key and the container wins, so
+a container that sets `capabilities` replaces the default `capabilities` whole
+instead of merging into it.
+Returns an empty string when neither side sets anything.
+Input: dict "name" <container name> "default" <defaultContainerSecurityContext map> "securityContext" <securityContext map>
+*/}}
+{{- define "annuums-rollout.effectiveContainerSecurityContext" -}}
+{{- $name := .name -}}
+{{- $effective := dict -}}
+{{- range $key, $value := (default dict .default) -}}
+  {{- $_ := set $effective $key $value -}}
+{{- end -}}
+{{- range $key, $value := (default dict .securityContext) -}}
+  {{- $_ := set $effective $key $value -}}
+{{- end -}}
+{{- if $effective -}}
+{{- include "annuums-rollout.containerSecurityContext" (dict "name" $name "securityContext" $effective) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render the emptyDir source of a volume.
+Presence-based, not truthiness-based: `emptyDir: {}` is a complete and valid
+source, so it must render as `emptyDir: {}` rather than be skipped and leave the
+volume without a source.
+Input: dict "name" <volume name> "emptyDir" <emptyDir map>
+*/}}
+{{- define "annuums-rollout.emptyDirVolume" -}}
+{{- $name := .name -}}
+{{- $emptyDir := default dict .emptyDir -}}
+{{- if not (kindIs "map" $emptyDir) -}}
+  {{- fail (printf "Error: volumes[%s].emptyDir must be a map, but got '%v'." $name $emptyDir) -}}
+{{- end -}}
+{{- range $key, $_ := $emptyDir -}}
+  {{- if not (has $key (list "medium" "sizeLimit")) -}}
+    {{- fail (printf "Error: volumes[%s].emptyDir.%s is not supported. Please use one of medium, sizeLimit." $name $key) -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasMedium := and (hasKey $emptyDir "medium") (not (kindIs "invalid" $emptyDir.medium)) -}}
+{{- $hasSizeLimit := and (hasKey $emptyDir "sizeLimit") (not (kindIs "invalid" $emptyDir.sizeLimit)) -}}
+{{- if $hasMedium -}}
+  {{- if not (has $emptyDir.medium (list "" "Memory")) -}}
+    {{- fail (printf "Error: volumes[%s].emptyDir.medium must be one of \"\", Memory, but got '%v'." $name $emptyDir.medium) -}}
+  {{- end -}}
+{{- end -}}
+{{- if not (or $hasMedium $hasSizeLimit) -}}
+emptyDir: {}
+{{- else -}}
+emptyDir:
+  {{- if $hasMedium }}
+  medium: {{ $emptyDir.medium | quote }}
+  {{- end }}
+  {{- if $hasSizeLimit }}
+  sizeLimit: {{ $emptyDir.sizeLimit }}
+  {{- end }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check that every volume declares exactly one source.
+A volume with no source renders as a bare `- name: <name>`, which the API server
+rejects with `must specify a volume type`.
+*/}}
+{{- define "validate.volumes" -}}
+{{- $sources := list "hostPath" "emptyDir" "secretVolume" "configMapVolume" "persistentVolumeClaim" -}}
+{{- range $i, $v := .Values.volumes -}}
+  {{- if not (kindIs "map" $v) -}}
+    {{- fail (printf "Error: volumes[%d] must be a map, but got '%v'." $i $v) -}}
+  {{- end -}}
+  {{- if not $v.name -}}
+    {{- fail (printf "Error: volumes[%d].name is required." $i) -}}
+  {{- end -}}
+  {{- $found := list -}}
+  {{- range $source := $sources -}}
+    {{- /* Presence, not truthiness: `emptyDir: {}` is a complete source. */ -}}
+    {{- if and (hasKey $v $source) (not (kindIs "invalid" (get $v $source))) -}}
+      {{- $found = append $found $source -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq (len $found) 0 -}}
+    {{- fail (printf "Error: volumes[%s] has no volume source. Please set one of %s." $v.name (join ", " $sources)) -}}
+  {{- end -}}
+  {{- if gt (len $found) 1 -}}
+    {{- fail (printf "Error: volumes[%s] has more than one volume source (%s). Please set only one." $v.name (join ", " $found)) -}}
+  {{- end -}}
+{{- end -}}
 {{- end -}}

@@ -4,6 +4,7 @@
 # Validate canary trafficRouting Passed {{- include "validate.canaryTrafficRouting" . }}
 # Check hostUsers Passed {{- include "validate.hostUsers" . }}
 # Check securityContext Passed {{- include "validate.securityContext" . }}
+# Check volumes Passed {{- include "validate.volumes" . }}
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
@@ -101,8 +102,9 @@ spec:
           {{- if .lifecycle }}
           {{- include "annuums-rollout.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
-          {{- if .securityContext }}
-          {{- include "annuums-rollout.containerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
+          {{- $securityContext := include "annuums-rollout.effectiveContainerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "default" $.Values.defaultContainerSecurityContext "securityContext" .securityContext) }}
+          {{- if $securityContext }}
+          {{- $securityContext | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
@@ -188,8 +190,9 @@ spec:
           {{- if .lifecycle }}
           {{- include "annuums-rollout.lifecycle" (dict "name" (printf "containers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
-          {{- if .securityContext }}
-          {{- include "annuums-rollout.containerSecurityContext" (dict "name" (printf "containers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
+          {{- $securityContext := include "annuums-rollout.effectiveContainerSecurityContext" (dict "name" (printf "containers[%s]" .name) "default" $.Values.defaultContainerSecurityContext "securityContext" .securityContext) }}
+          {{- if $securityContext }}
+          {{- $securityContext | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
@@ -333,9 +336,8 @@ spec:
             path: {{ .hostPath.path }}
             type: {{ .hostPath.type }}
           {{- end }}
-          {{- if .emptyDir }}
-          emptyDir:
-            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- if hasKey . "emptyDir" }}
+          {{- include "annuums-rollout.emptyDirVolume" (dict "name" .name "emptyDir" .emptyDir) | nindent 10 }}
           {{- end }}
           {{- if .secretVolume }}
           secret:
