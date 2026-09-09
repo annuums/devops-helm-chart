@@ -76,6 +76,8 @@ securityContext: {}
 # present in values, so declaring it here would pin every release to a value
 # instead of leaving the Kubernetes default (true).
 
+# -- `containers[].pdb` renders a PodDisruptionBudget for that container.
+# Set only one of `minAvailable` / `maxUnavailable`; setting both fails at render time.
 initContainers: []
 containers: []
 

@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.15.8
+
+- fix: `validate.pdbAvailability` was defined but never included, so a container setting both `pdb.minAvailable` and `pdb.maxUnavailable` rendered two overlapping PodDisruptionBudgets instead of failing (regressed in 0.13.1, when pdb.yaml was rewritten to render one PDB per field)
+  - the validator now takes the root context and is included from `validations.yaml` alongside the other validators, so it runs even when `pdb.yaml` is not rendered
+  - the error message now names the offending container (`containers[i](name)`)
+
 ## 0.15.7
 
 - feat: support `securityContext`

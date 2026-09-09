@@ -1,1 +1,2 @@
 # Autoscaling Check Passed {{- include "validate.autoscaling" . }}
+# PDB Availability Check Passed {{- include "validate.pdbAvailability" . }}
