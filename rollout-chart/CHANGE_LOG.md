@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.4
+
+- fix: add the missing `validate.pdbAvailability` validator (it was never carried over from deployment-chart, so a container setting both `pdb.minAvailable` and `pdb.maxUnavailable` rendered two overlapping PodDisruptionBudgets instead of failing)
+
 ## 0.0.3
 
 - feat: support `securityContext`

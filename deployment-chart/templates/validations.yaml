@@ -1,2 +1,3 @@
 # HostNetwork Check Passed {{- include "validate.hostNetworkAndHostPort" . }}
 # Deploy Strategy Check Passed {{- include "validate.rollingUpdateStrategy" . }}
+# PDB Availability Check Passed {{- include "validate.pdbAvailability" . }}

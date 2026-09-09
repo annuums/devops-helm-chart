@@ -64,6 +64,19 @@ Check if hpa and keda is defined together
 {{- end -}}
 
 {{/*
+Check if both minAvailable and maxUnavailable are set in a container's pdb.
+*/}}
+{{- define "validate.pdbAvailability" -}}
+{{- range $i, $c := .Values.containers }}
+  {{- if and $c.pdb $c.pdb.enabled }}
+    {{- if and (not (empty $c.pdb.minAvailable)) (not (empty $c.pdb.maxUnavailable)) -}}
+      {{- fail (printf "Error: containers[%d](%s).pdb has both minAvailable and maxUnavailable set. Please set only one." $i $c.name) -}}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Validate strategy type: must be canary or blueGreen
 */}}
 {{- define "validate.rolloutStrategy" -}}
