@@ -46,12 +46,3 @@ helm.sh/chart: {{ include "annuums-tgb.chart" . }}
 app.kubernetes.io/version: {{ include "annuums-tgb.appVersion" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
-
-{{/*
-Check if both minAvailable and maxUnavailable are set.
-*/}}
-{{- define "validate.pdbAvailability" -}}
-  {{- if and (not (empty .minAvailable)) (not (empty .maxUnavailable)) -}}
-    {{- fail "Error: Both minAvailable and maxUnavailable are set in PodDisruptionBudget. Please set only one." -}}
-  {{- end -}}
-{{- end -}}
