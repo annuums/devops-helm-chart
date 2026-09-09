@@ -1,8 +1,11 @@
 {{- with .Values.containers }}
   {{- range . }}
   {{- if and .pdb .pdb.enabled }}
+  {{/* Presence, not truthiness: 0 is a valid value for both fields. */}}
+  {{- $hasMaxUnavailable := and (hasKey .pdb "maxUnavailable") (not (kindIs "invalid" .pdb.maxUnavailable)) }}
+  {{- $hasMinAvailable := and (hasKey .pdb "minAvailable") (not (kindIs "invalid" .pdb.minAvailable)) }}
 
-  {{- if .pdb.maxUnavailable }}
+  {{- if $hasMaxUnavailable }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -20,7 +23,7 @@ spec:
       {{- end }}
   {{- end }}
 
-  {{- if .pdb.minAvailable }}
+  {{- if $hasMinAvailable }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

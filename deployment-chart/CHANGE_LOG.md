@@ -5,6 +5,7 @@
 - fix: `validate.pdbAvailability` was defined but never included, so a container setting both `pdb.minAvailable` and `pdb.maxUnavailable` rendered two overlapping PodDisruptionBudgets instead of failing (regressed in 0.13.1, when pdb.yaml was rewritten to render one PDB per field)
   - the validator now takes the root context and is included from `validations.yaml` alongside the other validators, so it runs even when `pdb.yaml` is not rendered
   - the error message now names the offending container (`containers[i](name)`)
+- fix: `containers[].pdb` treated `0` as unset, so `maxUnavailable: 0` (block all voluntary evictions) and `minAvailable: 0` silently rendered no PodDisruptionBudget. Both fields are now detected by presence instead of truthiness, so `0` renders; an explicitly empty value (`maxUnavailable:`) still counts as unset
 
 ## 0.15.7
 

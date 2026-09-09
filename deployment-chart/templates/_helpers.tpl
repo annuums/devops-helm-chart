@@ -60,7 +60,10 @@ other validators, instead of relying on pdb.yaml passing each `.pdb` in.
 {{- define "validate.pdbAvailability" -}}
 {{- range $i, $c := .Values.containers }}
   {{- if and $c.pdb $c.pdb.enabled }}
-    {{- if and (not (empty $c.pdb.minAvailable)) (not (empty $c.pdb.maxUnavailable)) -}}
+    {{/* Presence, not truthiness, so it matches what pdb.yaml renders: 0 is a valid value. */}}
+    {{- $hasMin := and (hasKey $c.pdb "minAvailable") (not (kindIs "invalid" $c.pdb.minAvailable)) }}
+    {{- $hasMax := and (hasKey $c.pdb "maxUnavailable") (not (kindIs "invalid" $c.pdb.maxUnavailable)) }}
+    {{- if and $hasMin $hasMax -}}
       {{- fail (printf "Error: containers[%d](%s).pdb has both minAvailable and maxUnavailable set. Please set only one." $i $c.name) -}}
     {{- end }}
   {{- end }}

@@ -3,6 +3,7 @@
 ## 0.0.4
 
 - fix: add the missing `validate.pdbAvailability` validator (it was never carried over from deployment-chart, so a container setting both `pdb.minAvailable` and `pdb.maxUnavailable` rendered two overlapping PodDisruptionBudgets instead of failing)
+- fix: `containers[].pdb` treated `0` as unset, so `maxUnavailable: 0` (block all voluntary evictions) and `minAvailable: 0` silently rendered no PodDisruptionBudget. Both fields are now detected by presence instead of truthiness, so `0` renders; an explicitly empty value (`maxUnavailable:`) still counts as unset
 
 ## 0.0.3
 

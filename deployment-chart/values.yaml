@@ -34,6 +34,7 @@ securityContext: {}
 
 # -- `containers[].pdb` renders a PodDisruptionBudget for that container.
 # Set only one of `minAvailable` / `maxUnavailable`; setting both fails at render time.
+# `0` is a valid value for either field; omit the key entirely to leave it unset.
 initContainers: []
 containers: []
 
