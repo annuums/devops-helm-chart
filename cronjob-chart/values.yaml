@@ -8,6 +8,15 @@ serviceAccount:
 labels: {}
 
 initContainers: []
+
+# `cronjob.securityContext` is the pod-level securityContext.
+# Supports runAsNonRoot, runAsUser, runAsGroup, fsGroup, fsGroupChangePolicy,
+# supplementalGroups, seccompProfile. Any other key fails at render time.
+# Container-level securityContext is set per entry in cronjob.containers/initContainers.
+#
+# `cronjob.hostUsers` is intentionally left unset: the chart only renders it when
+# the key is present in values, so declaring it here would pin every release to a
+# value instead of leaving the Kubernetes default (true).
 cronjob: {}
 
 affinity: {}

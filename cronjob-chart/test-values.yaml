@@ -56,6 +56,17 @@ initContainers:
             - "sh"
             - "-c"
             - "echo sidecar started"
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       cpu: 50m
       memory: 64Mi
@@ -70,6 +81,17 @@ cronjob:
   activeDeadlineSeconds: 600
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 2000
+    fsGroupChangePolicy: OnRootMismatch
+    supplementalGroups:
+      - 3000
+    seccompProfile:
+      type: RuntimeDefault
   containers:
     - image:
         repository: first-rep
@@ -80,6 +102,19 @@ cronjob:
         preStop:
           sleep:
             seconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - NET_BIND_SERVICE
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
       labels:
         test-label: "pigeon-1"
         test-label-another: "pigeon-another"
