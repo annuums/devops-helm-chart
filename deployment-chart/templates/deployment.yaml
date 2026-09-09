@@ -1,5 +1,7 @@
 # Check init container lifecycle Passed {{- include "validate.initContainerLifecycle" . }}
 # Check autoscaling Passed {{- include "validate.autoscaling" . }}
+# Check hostUsers Passed {{- include "validate.hostUsers" . }}
+# Check securityContext Passed {{- include "validate.securityContext" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,6 +51,12 @@ spec:
       {{- end }}
     spec:
       hostNetwork: {{ default false .Values.hostNetwork }}
+      {{- if hasKey .Values "hostUsers" }}
+      hostUsers: {{ .Values.hostUsers }}
+      {{- end }}
+      {{- if .Values.securityContext }}
+      {{- include "annuums-deployment.podSecurityContext" .Values.securityContext | nindent 6 }}
+      {{- end }}
       {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       {{- end }}
@@ -90,6 +98,9 @@ spec:
           {{- end }}
           {{- if .lifecycle }}
           {{- include "annuums-deployment.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
+          {{- end }}
+          {{- if .securityContext }}
+          {{- include "annuums-deployment.containerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
@@ -174,6 +185,9 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
           {{- if .lifecycle }}
           {{- include "annuums-deployment.lifecycle" (dict "name" (printf "containers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
+          {{- end }}
+          {{- if .securityContext }}
+          {{- include "annuums-deployment.containerSecurityContext" (dict "name" (printf "containers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
