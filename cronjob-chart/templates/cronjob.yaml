@@ -1,6 +1,8 @@
 ---
 # Unique Name Check Passed {{- include "cronjob.checkUniqueContainerNames" . }}
 # Check init container lifecycle Passed {{- include "validate.initContainerLifecycle" . }}
+# Check hostUsers Passed {{- include "validate.hostUsers" . }}
+# Check securityContext Passed {{- include "validate.securityContext" . }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -49,6 +51,12 @@ spec:
             {{- end }}
         spec:
           hostNetwork: {{ default false .Values.cronjob.hostNetwork }}
+          {{- if hasKey .Values.cronjob "hostUsers" }}
+          hostUsers: {{ .Values.cronjob.hostUsers }}
+          {{- end }}
+          {{- if .Values.cronjob.securityContext }}
+          {{- include "annuums-cronjob.podSecurityContext" .Values.cronjob.securityContext | nindent 10 }}
+          {{- end }}
           restartPolicy: {{ default "Never" .Values.cronjob.restartPolicy }}
           {{- if and (.Values.serviceAccount) (or (.Values.serviceAccount.create) (.Values.serviceAccount.exist)) }}
           serviceAccountName: {{ .Values.serviceAccount.name }}
@@ -87,6 +95,9 @@ spec:
               {{- end }}
               {{- if .lifecycle }}
               {{- include "annuums-cronjob.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 14 }}
+              {{- end }}
+              {{- if .securityContext }}
+              {{- include "annuums-cronjob.containerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "securityContext" .securityContext) | nindent 14 }}
               {{- end }}
               {{- if .command }}
               command:
@@ -171,6 +182,9 @@ spec:
               imagePullPolicy: {{ default "IfNotPresent" $container.image.pullPolicy }}
               {{- if $container.lifecycle }}
               {{- include "annuums-cronjob.lifecycle" (dict "name" (printf "cronjob.containers[%s]" $container.name) "lifecycle" $container.lifecycle) | nindent 14 }}
+              {{- end }}
+              {{- if $container.securityContext }}
+              {{- include "annuums-cronjob.containerSecurityContext" (dict "name" (printf "cronjob.containers[%s]" $container.name) "securityContext" $container.securityContext) | nindent 14 }}
               {{- end }}
               {{- with $.Values.environment }}
               {{- if or .env .secret .configmap }}

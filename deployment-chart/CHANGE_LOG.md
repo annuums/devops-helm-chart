@@ -1,5 +1,22 @@
 # Change Log
 
+## 0.15.7
+
+- feat: support `securityContext`
+  - Pod-level (`.Values.securityContext`): `runAsNonRoot`, `runAsUser`, `runAsGroup`, `fsGroup`, `fsGroupChangePolicy`, `supplementalGroups`, `seccompProfile`
+  - Container-level (`containers[].securityContext`, `initContainers[].securityContext`): `runAsNonRoot`, `runAsUser`, `runAsGroup`, `capabilities`, `allowPrivilegeEscalation`, `seccompProfile`, `readOnlyRootFilesystem`
+  - an unsupported key is rejected at render time with a clear error message
+  - `capabilities` and `seccompProfile` are validated too, not just passed through: unknown sub-keys, a non-list `add`/`drop`, an invalid `seccompProfile.type`, and a `localhostProfile` that does not match the type all fail at render time
+  - `securityContext` that is not a map fails with a chart error instead of a raw template error
+- feat: support `hostUsers` (Pod spec)
+  - not rendered unless explicitly set, so existing releases keep the Kubernetes default (host user namespace, `hostUsers: true`)
+  - `hostUsers` that is not a boolean fails at render time
+- fix: reject `hostUsers: false` together with `hostNetwork: true`
+  - the API server forbids this combination (`spec.hostNetwork: Forbidden: when 'hostUsers' is false`), so the chart now fails at render time instead of at apply time
+- fix: reject an effective `runAsNonRoot: true` with `runAsUser: 0`
+  - the pod-level and container-level `securityContext` are merged the way the kubelet merges them, so a pod-level `runAsNonRoot: true` combined with a container-level `runAsUser: 0` is caught
+  - the API server accepts this combination and the container then fails to start with `CreateContainerConfigError`, so the chart fails at render time instead
+
 ## 0.15.6
 
 - fix: fail with a clear message instead of a nil pointer error when `lifecycle.<hook>` has no handler
