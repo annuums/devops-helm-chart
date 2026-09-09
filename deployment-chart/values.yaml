@@ -28,6 +28,15 @@ autoscaling:
 # Container-level securityContext is set per entry in containers/initContainers.
 securityContext: {}
 
+# -- Container-level securityContext applied to every container and init
+# container. Set it once here instead of repeating the same block in every
+# `containers[]` entry of every env values file — Helm replaces lists instead of
+# merging them, so a container-level default cannot live in `containers[]`.
+# Accepts the same keys as `containers[].securityContext`; a key set on a
+# container overrides the default for that container (per top-level key, so a
+# container that sets `capabilities` replaces the default `capabilities` whole).
+defaultContainerSecurityContext: {}
+
 # `hostUsers` is intentionally absent: the chart only renders it when the key is
 # present in values, so declaring it here would pin every release to a value
 # instead of leaving the Kubernetes default (true).

@@ -100,6 +100,16 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
 
+# Applied to every container and init container; a container's own
+# securityContext overrides it per top-level key.
+defaultContainerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
 initContainers:
   - name: init-migration
     image:
@@ -334,6 +344,13 @@ volumes:
   - name: empty-volume
     emptyDir:
       sizeLimit: 500Mi
+  - name: empty-volume-default
+    # An empty map is a complete emptyDir source and must render as `emptyDir: {}`.
+    emptyDir: {}
+  - name: empty-volume-memory
+    emptyDir:
+      medium: Memory
+      sizeLimit: 64Mi
   - name: secret-volume
     secretVolume:
       secretName: secr-volume

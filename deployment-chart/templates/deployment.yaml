@@ -2,6 +2,7 @@
 # Check autoscaling Passed {{- include "validate.autoscaling" . }}
 # Check hostUsers Passed {{- include "validate.hostUsers" . }}
 # Check securityContext Passed {{- include "validate.securityContext" . }}
+# Check volumes Passed {{- include "validate.volumes" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -99,8 +100,9 @@ spec:
           {{- if .lifecycle }}
           {{- include "annuums-deployment.lifecycle" (dict "name" (printf "initContainers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
-          {{- if .securityContext }}
-          {{- include "annuums-deployment.containerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
+          {{- $securityContext := include "annuums-deployment.effectiveContainerSecurityContext" (dict "name" (printf "initContainers[%s]" .name) "default" $.Values.defaultContainerSecurityContext "securityContext" .securityContext) }}
+          {{- if $securityContext }}
+          {{- $securityContext | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
@@ -186,8 +188,9 @@ spec:
           {{- if .lifecycle }}
           {{- include "annuums-deployment.lifecycle" (dict "name" (printf "containers[%s]" .name) "lifecycle" .lifecycle) | nindent 10 }}
           {{- end }}
-          {{- if .securityContext }}
-          {{- include "annuums-deployment.containerSecurityContext" (dict "name" (printf "containers[%s]" .name) "securityContext" .securityContext) | nindent 10 }}
+          {{- $securityContext := include "annuums-deployment.effectiveContainerSecurityContext" (dict "name" (printf "containers[%s]" .name) "default" $.Values.defaultContainerSecurityContext "securityContext" .securityContext) }}
+          {{- if $securityContext }}
+          {{- $securityContext | nindent 10 }}
           {{- end }}
           {{- if .command }}
           command:
@@ -314,9 +317,8 @@ spec:
             path: {{ .hostPath.path }}
             type: {{ .hostPath.type }}
           {{- end }}
-          {{- if .emptyDir }}
-          emptyDir:
-            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- if hasKey . "emptyDir" }}
+          {{- include "annuums-deployment.emptyDirVolume" (dict "name" .name "emptyDir" .emptyDir) | nindent 10 }}
           {{- end }}
           {{- if .secretVolume }}
           secret:
