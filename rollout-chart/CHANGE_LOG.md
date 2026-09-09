@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.0.5
+
+- fix: `volumes[].emptyDir` was skipped when it had no `sizeLimit`
+  - the template tested `{{- if .emptyDir }}`, and an empty map is falsy in Go templates, so `emptyDir: {}` rendered a volume with no source at all and the API server rejected the manifest with `must specify a volume type`
+  - the source is now detected by presence, so `emptyDir: {}` renders as `emptyDir: {}`. This unblocks `readOnlyRootFilesystem: true`, which almost always needs a bare `/tmp` emptyDir
+- feat: support `volumes[].emptyDir.medium` (`""` or `Memory`)
+  - `sizeLimit` and `medium` are both optional and independent; an unsupported key or an invalid `medium` fails at render time
+- feat: reject a volume that declares no source, or more than one
+  - a volume with no source used to render as a bare `- name: <name>` and fail at apply time
+- feat: support `defaultContainerSecurityContext`
+  - a container-level `securityContext` applied to every entry in `containers` and `initContainers`, set once at the top level of values
+  - Helm replaces lists instead of merging them, so a default for `containers[].securityContext` cannot live in `containers[]`; without this key the same block has to be repeated in every container of every env values file
+  - a container's own `securityContext` overrides the default per top-level key, so a container that sets `capabilities` replaces the default `capabilities` whole
+  - accepts the same keys as `containers[].securityContext` and is validated the same way, even when no container is defined
+  - `validate.securityContext` resolves it as part of the effective securityContext, so a default `runAsNonRoot: true` combined with a container `runAsUser: 0` is still caught
+
 ## 0.0.4
 
 - fix: add the missing `validate.pdbAvailability` validator (it was never carried over from deployment-chart, so a container setting both `pdb.minAvailable` and `pdb.maxUnavailable` rendered two overlapping PodDisruptionBudgets instead of failing)
