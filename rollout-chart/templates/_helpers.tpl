@@ -168,3 +168,198 @@ Check init container restartPolicy, and that lifecycle is only set on sidecar in
   {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Reject `hostUsers: false` together with `hostNetwork: true`.
+The API server forbids a pod from joining the host network namespace while it
+runs in its own user namespace.
+*/}}
+{{- define "validate.hostUsers" -}}
+{{- if hasKey .Values "hostUsers" }}
+  {{- if not (kindIs "bool" .Values.hostUsers) }}
+    {{- fail (printf "Error: hostUsers must be a boolean, but got '%v'." .Values.hostUsers) -}}
+  {{- end }}
+  {{- if and (not .Values.hostUsers) .Values.hostNetwork }}
+    {{- fail "Error: hostUsers=false cannot be combined with hostNetwork=true. A pod cannot join the host network namespace while running in its own user namespace." -}}
+  {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Check every securityContext is a map, and reject an effective (pod merged with
+container) securityContext that sets `runAsNonRoot: true` together with
+`runAsUser: 0`. The API server accepts that combination, but the kubelet fails
+the container at start with CreateContainerConfigError.
+*/}}
+{{- define "validate.securityContext" -}}
+{{- $pod := default dict .Values.securityContext -}}
+{{- if not (kindIs "map" $pod) }}
+  {{- fail (printf "Error: securityContext must be a map, but got '%v'." $pod) -}}
+{{- end }}
+{{- $groups := dict "initContainers" (default list .Values.initContainers) "containers" (default list .Values.containers) -}}
+{{- range $path, $containers := $groups }}
+  {{- range $i, $c := $containers }}
+    {{- $name := default (printf "%d" $i) $c.name }}
+    {{- $ctx := default dict $c.securityContext }}
+    {{- if not (kindIs "map" $ctx) }}
+      {{- fail (printf "Error: %s[%s].securityContext must be a map, but got '%v'." $path $name $ctx) -}}
+    {{- end }}
+    {{- $nonRoot := $pod.runAsNonRoot }}
+    {{- if hasKey $ctx "runAsNonRoot" }}{{- $nonRoot = $ctx.runAsNonRoot }}{{- end }}
+    {{- $user := $pod.runAsUser }}
+    {{- if hasKey $ctx "runAsUser" }}{{- $user = $ctx.runAsUser }}{{- end }}
+    {{- if and $nonRoot (not (kindIs "invalid" $user)) (not (kindIs "bool" $user)) }}
+      {{- if eq (int $user) 0 }}
+        {{- fail (printf "Error: %s[%s] resolves to runAsNonRoot=true with runAsUser=0. The container would fail to start." $path $name) -}}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Validate a seccompProfile block.
+Input: dict "path" <values path> "seccompProfile" <seccompProfile map>
+*/}}
+{{- define "annuums-rollout.validateSeccompProfile" -}}
+{{- $path := .path -}}
+{{- $profile := .seccompProfile -}}
+{{- if not (kindIs "map" $profile) -}}
+  {{- fail (printf "Error: %s.seccompProfile must be a map, but got '%v'." $path $profile) -}}
+{{- end -}}
+{{- range $key, $_ := $profile -}}
+  {{- if not (has $key (list "type" "localhostProfile")) -}}
+    {{- fail (printf "Error: %s.seccompProfile.%s is not supported. Please use one of type, localhostProfile." $path $key) -}}
+  {{- end -}}
+{{- end -}}
+{{- if not (has $profile.type (list "RuntimeDefault" "Unconfined" "Localhost")) -}}
+  {{- fail (printf "Error: %s.seccompProfile.type is required and must be one of RuntimeDefault, Unconfined, Localhost." $path) -}}
+{{- end -}}
+{{- if eq $profile.type "Localhost" -}}
+  {{- if not $profile.localhostProfile -}}
+    {{- fail (printf "Error: %s.seccompProfile.localhostProfile is required when type is 'Localhost'." $path) -}}
+  {{- end -}}
+{{- else if hasKey $profile "localhostProfile" -}}
+  {{- fail (printf "Error: %s.seccompProfile.localhostProfile is only allowed when type is 'Localhost'." $path) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Validate a capabilities block.
+Input: dict "path" <values path> "capabilities" <capabilities map>
+*/}}
+{{- define "annuums-rollout.validateCapabilities" -}}
+{{- $path := .path -}}
+{{- $capabilities := .capabilities -}}
+{{- if not (kindIs "map" $capabilities) -}}
+  {{- fail (printf "Error: %s.capabilities must be a map, but got '%v'." $path $capabilities) -}}
+{{- end -}}
+{{- range $key, $value := $capabilities -}}
+  {{- if not (has $key (list "add" "drop")) -}}
+    {{- fail (printf "Error: %s.capabilities.%s is not supported. Please use one of add, drop." $path $key) -}}
+  {{- end -}}
+  {{- if not (kindIs "slice" $value) -}}
+    {{- fail (printf "Error: %s.capabilities.%s must be a list, but got '%v'." $path $key $value) -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render the pod-level securityContext block.
+Only `runAsNonRoot`, `runAsUser`, `runAsGroup`, `fsGroup`, `fsGroupChangePolicy`,
+`supplementalGroups` and `seccompProfile` are supported.
+Input: securityContext map
+*/}}
+{{- define "annuums-rollout.podSecurityContext" -}}
+{{- $ctx := . -}}
+{{- $allowed := list "runAsNonRoot" "runAsUser" "runAsGroup" "fsGroup" "fsGroupChangePolicy" "supplementalGroups" "seccompProfile" -}}
+{{- range $key, $_ := $ctx -}}
+  {{- if not (has $key $allowed) -}}
+    {{- fail (printf "Error: securityContext.%s is not supported. Please use one of %s." $key (join ", " $allowed)) -}}
+  {{- end -}}
+{{- end -}}
+{{- if hasKey $ctx "fsGroupChangePolicy" -}}
+  {{- if not (has $ctx.fsGroupChangePolicy (list "Always" "OnRootMismatch")) -}}
+    {{- fail (printf "Error: securityContext.fsGroupChangePolicy must be one of Always, OnRootMismatch, but got '%v'." $ctx.fsGroupChangePolicy) -}}
+  {{- end -}}
+{{- end -}}
+{{- if hasKey $ctx "supplementalGroups" -}}
+  {{- if not (kindIs "slice" $ctx.supplementalGroups) -}}
+    {{- fail (printf "Error: securityContext.supplementalGroups must be a list, but got '%v'." $ctx.supplementalGroups) -}}
+  {{- end -}}
+{{- end -}}
+{{- if hasKey $ctx "seccompProfile" -}}
+  {{- include "annuums-rollout.validateSeccompProfile" (dict "path" "securityContext" "seccompProfile" $ctx.seccompProfile) -}}
+{{- end -}}
+securityContext:
+  {{- if hasKey $ctx "runAsNonRoot" }}
+  runAsNonRoot: {{ $ctx.runAsNonRoot }}
+  {{- end }}
+  {{- if hasKey $ctx "runAsUser" }}
+  runAsUser: {{ $ctx.runAsUser }}
+  {{- end }}
+  {{- if hasKey $ctx "runAsGroup" }}
+  runAsGroup: {{ $ctx.runAsGroup }}
+  {{- end }}
+  {{- if hasKey $ctx "fsGroup" }}
+  fsGroup: {{ $ctx.fsGroup }}
+  {{- end }}
+  {{- if hasKey $ctx "fsGroupChangePolicy" }}
+  fsGroupChangePolicy: {{ $ctx.fsGroupChangePolicy | quote }}
+  {{- end }}
+  {{- if hasKey $ctx "supplementalGroups" }}
+  supplementalGroups:
+    {{- toYaml $ctx.supplementalGroups | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $ctx "seccompProfile" }}
+  seccompProfile:
+    {{- toYaml $ctx.seccompProfile | nindent 4 }}
+  {{- end }}
+{{- end -}}
+
+{{/*
+Render a container-level securityContext block.
+Supports `runAsNonRoot`, `runAsUser`, `runAsGroup`, `capabilities`,
+`allowPrivilegeEscalation`, `seccompProfile` and `readOnlyRootFilesystem`.
+Input: dict "name" <container name> "securityContext" <securityContext map>
+*/}}
+{{- define "annuums-rollout.containerSecurityContext" -}}
+{{- $name := .name -}}
+{{- $ctx := .securityContext -}}
+{{- $allowed := list "runAsNonRoot" "runAsUser" "runAsGroup" "capabilities" "allowPrivilegeEscalation" "seccompProfile" "readOnlyRootFilesystem" -}}
+{{- range $key, $_ := $ctx -}}
+  {{- if not (has $key $allowed) -}}
+    {{- fail (printf "Error: %s.securityContext.%s is not supported. Please use one of %s." $name $key (join ", " $allowed)) -}}
+  {{- end -}}
+{{- end -}}
+{{- if hasKey $ctx "capabilities" -}}
+  {{- include "annuums-rollout.validateCapabilities" (dict "path" (printf "%s.securityContext" $name) "capabilities" $ctx.capabilities) -}}
+{{- end -}}
+{{- if hasKey $ctx "seccompProfile" -}}
+  {{- include "annuums-rollout.validateSeccompProfile" (dict "path" (printf "%s.securityContext" $name) "seccompProfile" $ctx.seccompProfile) -}}
+{{- end -}}
+securityContext:
+  {{- if hasKey $ctx "runAsNonRoot" }}
+  runAsNonRoot: {{ $ctx.runAsNonRoot }}
+  {{- end }}
+  {{- if hasKey $ctx "runAsUser" }}
+  runAsUser: {{ $ctx.runAsUser }}
+  {{- end }}
+  {{- if hasKey $ctx "runAsGroup" }}
+  runAsGroup: {{ $ctx.runAsGroup }}
+  {{- end }}
+  {{- if hasKey $ctx "allowPrivilegeEscalation" }}
+  allowPrivilegeEscalation: {{ $ctx.allowPrivilegeEscalation }}
+  {{- end }}
+  {{- if hasKey $ctx "readOnlyRootFilesystem" }}
+  readOnlyRootFilesystem: {{ $ctx.readOnlyRootFilesystem }}
+  {{- end }}
+  {{- if hasKey $ctx "capabilities" }}
+  capabilities:
+    {{- toYaml $ctx.capabilities | nindent 4 }}
+  {{- end }}
+  {{- if hasKey $ctx "seccompProfile" }}
+  seccompProfile:
+    {{- toYaml $ctx.seccompProfile | nindent 4 }}
+  {{- end }}
+{{- end -}}
