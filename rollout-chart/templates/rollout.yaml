@@ -163,22 +163,7 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
-          resources:
-          {{- if .resources }}
-            requests:
-              cpu: {{ .resources.cpu }}
-              memory: {{ .resources.memory }}
-            limits:
-              cpu: {{ .resources.cpu }}
-              memory: {{ .resources.memory }}
-          {{- else }}
-            requests:
-              cpu: 250m
-              memory: 128Mi
-            limits:
-              cpu: 250m
-              memory: 128Mi
-          {{- end }}
+          {{- include "annuums-rollout.resources" (dict "path" (printf "initContainers[%s].resources" .name) "resources" .resources) | nindent 10 }}
         {{- end }}
       {{- end }}
       containers:
@@ -251,22 +236,7 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
-          resources:
-          {{- if .resources }}
-            requests:
-              cpu: {{ .resources.cpu }}
-              memory: {{ .resources.memory }}
-            limits:
-              cpu: {{ .resources.cpu }}
-              memory: {{ .resources.memory }}
-          {{- else }}
-            requests:
-              cpu: 250m
-              memory: 128Mi
-            limits:
-              cpu: 250m
-              memory: 128Mi
-          {{- end }}
+          {{- include "annuums-rollout.resources" (dict "path" (printf "containers[%s].resources" .name) "resources" .resources) | nindent 10 }}
           {{- with .ports }}
           ports:
           {{- range . }}

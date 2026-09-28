@@ -1,5 +1,27 @@
 # Change Log
 
+## 0.1.0
+
+- **BREAKING**: in the flat `resources` format, a key other than `cpu`/`memory` now fails at render time instead of being silently dropped; mixing the flat format with `requests`/`limits` fails too
+  - values that only use `resources.cpu` / `resources.memory` render the same as before and need no change
+- feat: support Kubernetes-style `resources` (`requests` / `limits`) on `containers[]` and `initContainers[]`
+  - `requests` and `limits` are set independently and only what is set is rendered, so a container can set requests without limits, or give `limits` higher values than `requests`
+  - any resource name Kubernetes accepts is supported: `cpu`, `memory`, `ephemeral-storage`, `hugepages-<size>`, and fully qualified extended resources such as `nvidia.com/gpu`
+  - a resource set in `limits` but not in `requests` gets a request equal to the limit (Kubernetes default behavior)
+  - an unknown resource name (e.g. a misspelled `ephemeral-storage`), a non-map `requests`/`limits` and a value that is not a quantity fail at render time
+  ```yaml
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+      ephemeral-storage: 1Gi
+    limits:
+      memory: 512Mi
+      ephemeral-storage: 2Gi
+  ```
+- the flat format (`resources.cpu`, `resources.memory`, applied to both requests and limits) still works and renders the same as before
+- unchanged: with no `resources`, the chart default (`250m` CPU / `128Mi` memory for both requests and limits) is used
+
 ## 0.0.5
 
 - fix: `volumes[].emptyDir` was skipped when it had no `sizeLimit`
