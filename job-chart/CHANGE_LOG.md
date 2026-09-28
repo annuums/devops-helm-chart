@@ -1,6 +1,6 @@
 # Change Log
 
-## 0.0.0
+## 0.0.1
 
 - Add job-chart: Add chart for `Job` Object
   - Based on `cronjob-chart` 0.7.12; the values layout is the same, except `cronjob:` is `job:` and the CronJob-only fields (`schedule`, `timeZone`, `concurrencyPolicy`, `startingDeadlineSeconds`, `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`) are gone
