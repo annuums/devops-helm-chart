@@ -2,4 +2,4 @@ apiVersion: v2
 description: A Helm chart for Kubernetes Job Object in Annuums
 name: job-chart
 type: application
-version: 0.0.1
+version: 0.1.0

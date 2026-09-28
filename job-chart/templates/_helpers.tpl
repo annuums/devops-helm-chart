@@ -491,3 +491,106 @@ Check the Job spec fields.
   {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Validate a resource list (`requests`, `limits`, or the legacy flat format).
+Resource names follow Kubernetes: `cpu`, `memory`, `ephemeral-storage`,
+`hugepages-<size>`, or a fully qualified extended resource (e.g. `nvidia.com/gpu`).
+Input: dict "path" <values path> "values" <resource list map>
+*/}}
+{{- define "annuums-job.validateResourceList" -}}
+{{- $path := .path -}}
+{{- range $name, $quantity := .values -}}
+  {{- if not (or (has $name (list "cpu" "memory" "ephemeral-storage")) (hasPrefix "hugepages-" $name) (contains "/" $name)) -}}
+    {{- fail (printf "Error: %s.%s is not a supported resource name. Please use cpu, memory, ephemeral-storage, hugepages-<size>, or a fully qualified extended resource name (e.g. nvidia.com/gpu)." $path $name) -}}
+  {{- end -}}
+  {{- if not (or (kindIs "string" $quantity) (kindIs "int" $quantity) (kindIs "int64" $quantity) (kindIs "float64" $quantity)) -}}
+    {{- fail (printf "Error: %s.%s must be a quantity (e.g. 250m, 128Mi), but got '%v'." $path $name $quantity) -}}
+  {{- end -}}
+  {{- if and (kindIs "string" $quantity) (eq (trim $quantity) "") -}}
+    {{- fail (printf "Error: %s.%s must be a quantity (e.g. 250m, 128Mi), but got an empty string." $path $name) -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render the resources block of a container.
+Two formats are accepted:
+- Kubernetes format: `requests` and/or `limits`, each a map of resource name to
+  quantity. They are set independently and only what is set is rendered.
+- Legacy flat format: `cpu` and `memory` at the top level, applied to both
+  requests and limits. Kept so existing values files render unchanged.
+Mixing the two formats fails. With no `resources`, the chart default (cpu 250m,
+memory 128Mi for both requests and limits) is used.
+Input: dict "path" <values path> "resources" <resources map>
+*/}}
+{{- define "annuums-job.resources" -}}
+{{- $path := .path -}}
+{{- $resources := default dict .resources -}}
+{{- if not (kindIs "map" $resources) -}}
+  {{- fail (printf "Error: %s must be a map, but got '%v'." $path $resources) -}}
+{{- end -}}
+{{- if not $resources -}}
+resources:
+  requests:
+    cpu: 250m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+{{- else if or (hasKey $resources "requests") (hasKey $resources "limits") -}}
+{{- range $key, $_ := $resources -}}
+  {{- if not (has $key (list "requests" "limits")) -}}
+    {{- fail (printf "Error: %s.%s cannot be mixed with requests/limits. Please move it under %s.requests or %s.limits." $path $key $path $path) -}}
+  {{- end -}}
+{{- end -}}
+{{- $rendered := dict -}}
+{{- range $field := list "requests" "limits" -}}
+  {{- $values := get $resources $field -}}
+  {{- if not (kindIs "invalid" $values) -}}
+    {{- if not (kindIs "map" $values) -}}
+      {{- fail (printf "Error: %s.%s must be a map, but got '%v'." $path $field $values) -}}
+    {{- end -}}
+    {{- include "annuums-job.validateResourceList" (dict "path" (printf "%s.%s" $path $field) "values" $values) -}}
+    {{- if $values -}}
+      {{- $_ := set $rendered $field $values -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if $rendered -}}
+resources:
+  {{- with $rendered.requests }}
+  requests:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $rendered.limits }}
+  limits:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- else -}}
+resources: {}
+{{- end -}}
+{{- else -}}
+{{- range $key, $_ := $resources -}}
+  {{- if not (has $key (list "cpu" "memory")) -}}
+    {{- fail (printf "Error: %s.%s is not supported. Please use %s.requests / %s.limits, or only cpu and memory for the flat format that sets requests and limits to the same value." $path $key $path $path) -}}
+  {{- end -}}
+{{- end -}}
+{{- include "annuums-job.validateResourceList" (dict "path" $path "values" $resources) -}}
+resources:
+  requests:
+    {{- if hasKey $resources "cpu" }}
+    cpu: {{ $resources.cpu }}
+    {{- end }}
+    {{- if hasKey $resources "memory" }}
+    memory: {{ $resources.memory }}
+    {{- end }}
+  limits:
+    {{- if hasKey $resources "cpu" }}
+    cpu: {{ $resources.cpu }}
+    {{- end }}
+    {{- if hasKey $resources "memory" }}
+    memory: {{ $resources.memory }}
+    {{- end }}
+{{- end -}}
+{{- end -}}
