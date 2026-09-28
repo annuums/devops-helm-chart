@@ -46,8 +46,8 @@ spec:
             app.kubernetes.io/cronjob: {{ template "annuums-cronjob.fullname" $ }}
             annuums.obs/version: {{ template "annuums-cronjob.chart" $ }}
             {{- include "annuums-cronjob.labels" $ | nindent 12 }}
-            {{- if .labels }}
-            {{- toYaml .labels | nindent 12 }}
+            {{- if .Values.labels }}
+            {{- toYaml .Values.labels | nindent 12 }}
             {{- end }}
         spec:
           hostNetwork: {{ default false .Values.cronjob.hostNetwork }}
@@ -88,7 +88,7 @@ spec:
           initContainers:
             {{- range . }}
             - name: {{ .name }}
-              image: {{ printf "%s:%s" .image.repository .image.tag | quote }}
+              image: {{ printf "%s:%v" .image.repository .image.tag | quote }}
               imagePullPolicy: {{ default "IfNotPresent" .image.pullPolicy }}
               {{- if .restartPolicy }}
               restartPolicy: {{ .restartPolicy }}
@@ -177,8 +177,8 @@ spec:
           containers:
           {{- with .Values.cronjob.containers }}
             {{- range $index, $container := . }}
-            - name: {{ $container.name }} # {{ printf "%s-%d" $.Values.cronjob.name $index }}
-              image: {{ printf "%s:%s" $container.image.repository $container.image.tag | quote }}
+            - name: {{ $container.name }}{{ if $.Values.cronjob.name }} # {{ printf "%s-%d" $.Values.cronjob.name $index }}{{ end }}
+              image: {{ printf "%s:%v" $container.image.repository $container.image.tag | quote }}
               imagePullPolicy: {{ default "IfNotPresent" $container.image.pullPolicy }}
               {{- if $container.lifecycle }}
               {{- include "annuums-cronjob.lifecycle" (dict "name" (printf "cronjob.containers[%s]" $container.name) "lifecycle" $container.lifecycle) | nindent 14 }}

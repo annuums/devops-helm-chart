@@ -59,7 +59,6 @@ This helper checks if there are multiple containers defined with the same name.
   {{- end -}}
 {{- end }}
 {{- end }}
-*/}}
 
 {{/*
 Common labels
