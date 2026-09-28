@@ -1,0 +1,53 @@
+fullnameOverride: annuums-job
+appVersionSuffix: job-chart
+namespace: annuums-job
+
+serviceAccount:
+  create: false
+
+labels: {}
+
+# `annotations` is set on the Job object only; `podAnnotations` on the Job's pod.
+# A Job's pod template is immutable, so a `helm upgrade` that changes it fails.
+# To re-run the Job on every release, run it as a Helm hook, e.g.
+#   annotations:
+#     helm.sh/hook: post-install,post-upgrade
+#     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+annotations: {}
+podAnnotations: {}
+
+initContainers: []
+
+# -- Container-level securityContext applied to every container and init
+# container. Set it once here instead of repeating the same block in every
+# `job.containers[]` entry of every env values file — Helm replaces lists instead
+# of merging them, so a container-level default cannot live in `job.containers[]`.
+# Accepts the same keys as `job.containers[].securityContext`; a key set on a
+# container overrides the default for that container (per top-level key, so a
+# container that sets `capabilities` replaces the default `capabilities` whole).
+defaultContainerSecurityContext: {}
+
+# `job` holds the Job spec and its pod spec.
+#   backoffLimit: 0             # default 0
+#   activeDeadlineSeconds: 600  # default 600
+#   ttlSecondsAfterFinished:    # not rendered unless set
+#   completions / parallelism:  # not rendered unless set
+#   completionMode:             # NonIndexed | Indexed (Indexed needs completions)
+#   suspend:                    # not rendered unless set
+#   restartPolicy: Never        # Never | OnFailure
+#
+# `job.securityContext` is the pod-level securityContext.
+# Supports runAsNonRoot, runAsUser, runAsGroup, fsGroup, fsGroupChangePolicy,
+# supplementalGroups, seccompProfile. Any other key fails at render time.
+# Container-level securityContext is set per entry in job.containers/initContainers.
+#
+# `job.hostUsers` is intentionally left unset: the chart only renders it when
+# the key is present in values, so declaring it here would pin every release to a
+# value instead of leaving the Kubernetes default (true).
+job: {}
+
+affinity: {}
+tolerations: []
+nodeSelector: {}
+
+volumes: []
