@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.7.13
+
+- fix: render custom `labels` on the job pod template
+  - the pod template read `.labels` at the root context, which is always empty, so `labels` only reached the CronJob and ServiceAccount; it now reaches the pod as well
+- fix: render a numeric image tag correctly
+  - `image.tag: 1` rendered as `image: "repo:%!s(int64=1)"`; the tag is now formatted with `%v`
+  - YAML still parses an unquoted tag as a number, so `tag: 1.10` becomes `1.1`. Quote tags that have a trailing zero
+- fix: skip the `# <cronjob.name>-<index>` comment on containers when `cronjob.name` is unset
+  - it rendered as `# %!s(<nil>)-0`
+- chore: remove a stray `*/}}` in `_helpers.tpl`
+
 ## 0.7.12
 
 - feat: support `securityContext`
