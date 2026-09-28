@@ -29,7 +29,7 @@ description: A Helm chart for your-application-name
 type: application
 version: 0.0.1 # your app version
 dependencies:
-  - name: base-chart-name # deployment-chart, cronjob-chart, config-chart ...
+  - name: base-chart-name # deployment-chart, cronjob-chart, job-chart, config-chart ...
     alias: your-application-name
     version: version-of-the-base-chart # the annuums chart version
     repository: oci://registry-1.docker.io/annuums

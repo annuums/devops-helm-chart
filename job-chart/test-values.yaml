@@ -1,0 +1,272 @@
+fullnameOverride: annuums-job
+appVersionSuffix: job-chart
+namespace: annuums-job
+
+serviceAccount:
+  create: true
+  exist: false
+  name: pigeon-job-sa
+  annotations:
+    iam.gke.io/gcp-service-account: pigeon-sa@annuums.iam.gserviceaccount.com
+    another-annotation: hello-world
+
+labels:
+  my-label: custom-label
+  job: batch-0
+
+imagePullSecrets:
+  - name: my-registry-secret
+  - name: my-registry-secret-2
+
+annotations:
+  annuums.devops/pigeon: pigeon
+  helm.sh/hook: post-install,post-upgrade
+  helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+
+podAnnotations:
+  annuums.devops/pigeon-pod: pigeon-pod
+
+initContainers:
+  - name: init-wait-dependency
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "until nc -z api-service 8080; do echo waiting for api; sleep 2; done"
+    resources:
+      cpu: 50m
+      memory: 64Mi
+  - name: init-sidecar-log-shipper
+    restartPolicy: Always
+    image:
+      repository: busybox
+      tag: "1.28"
+      pullPolicy: IfNotPresent
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - "tail -f /dev/null"
+    lifecycle:
+      preStop:
+        sleep:
+          seconds: 5
+      postStart:
+        exec:
+          command:
+            - "sh"
+            - "-c"
+            - "echo sidecar started"
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      cpu: 50m
+      memory: 64Mi
+
+defaultContainerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+job:
+  name: pigeon-job
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 3600
+  completions: 3
+  parallelism: 2
+  completionMode: Indexed
+  suspend: false
+  restartPolicy: OnFailure
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 2000
+    fsGroupChangePolicy: OnRootMismatch
+    supplementalGroups:
+      - 3000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - image:
+        repository: first-rep
+        tag: 1.0.0
+        pullPolicy: Never
+      name: pigeon-container
+      lifecycle:
+        preStop:
+          sleep:
+            seconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - NET_BIND_SERVICE
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+      labels:
+        test-label: "pigeon-1"
+        test-label-another: "pigeon-another"
+      annotations:
+        test-annotatino-second: "pigeon-1-a"
+        test-annotatino-first: "pigeon-1-b"
+      args:
+        - "echo job index $JOB_COMPLETION_INDEX"
+      command:
+        - "sh"
+        - "-c"
+      volumeMounts:
+        - name: hostpath-volume
+          mountPath: /foo
+          subPath: ./foo
+          readOnly: true
+      # Resource Default
+      # cpu: 250m
+      # memory: 128Mi
+      resources:
+        cpu: 250m
+        memory: 256Mi
+    - image:
+        repository: first-rep
+        tag: 1.0.0
+        pullPolicy: Never
+      name: pigeon-another-container # pigeon-container will occur error for duplicate name
+      lifecycle:
+        preStop:
+          exec:
+            command:
+              - "sh"
+              - "-c"
+              - "sleep 10"
+        postStart:
+          exec:
+            command:
+              - "sh"
+              - "-c"
+              - "echo started"
+      labels:
+        test-label: "pigeon-1"
+        test-label-another: "pigeon-another"
+      annotations:
+        test-annotatino-second: "pigeon-1-a"
+        test-annotatino-first: "pigeon-1-b"
+      args:
+        - "echo job index $JOB_COMPLETION_INDEX"
+      command:
+        - "sh"
+        - "-c"
+      volumeMounts:
+        - name: hostpath-volume
+          mountPath: /foo
+          subPath: ./foo
+          readOnly: true
+      # Resource Default
+      # cpu: 250m
+      # memory: 128Mi
+      resources:
+        cpu: 250m
+        memory: 256Mi
+
+nodeSelector:
+  type: applications
+  kubernetes.io/architecture: amd64
+
+volumes:
+  - name: hostpath-volume
+    hostPath:
+      path: /host-foo
+      # type: Directory | DirectoryOrCreate | File | FileOrCreate | Socket
+      type: Directory
+  - name: empty-volume
+    emptyDir:
+      sizeLimit: 500Mi
+  - name: empty-memory-volume
+    emptyDir:
+      medium: Memory
+  - name: empty-default-volume
+    emptyDir: {}
+  - name: secret-volume
+    secretVolume:
+      secretName: secr-volume
+  - name: configmap-volume
+    configMapVolume:
+      name: conf-volume
+  - name: pvc-volume
+    persistentVolumeClaim:
+      name: my-pvc-ref-name
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: pink-pigeon
+              operator: In
+              values:
+                - king
+                - queen
+  podAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app
+              operator: In
+              values:
+                - database
+        topologyKey: topology.kubernetes.io/zone
+        # Only Pods from a given rollout are taken into consideration when calculating pod affinity.
+        # If you update the Deployment, the replacement Pods follow their own affinity rules
+        # (if there are any defined in the new Pod template)
+        matchLabelKeys:
+          - pod-template-hash
+tolerations:
+  - key: my-key
+    operator: Equal
+    value: true
+    effect: NoSchedule
+
+environment:
+  env:
+    - name: FOO
+      value: BAR
+  secret:
+    - name: sec-env-name
+      ref:
+        name: secret-name
+        key: secret-key
+        optional: false
+  configmap:
+    - name: cm-env-name
+      ref:
+        name: configmap-name
+        key: configmap-key
+  envFrom:
+    - type: configmap
+      configMapRefName: special-config-name
+    - type: configmap
+      configMapRefName: another-config-name
+    - type: secret
+      secretRefName: secret-name
+    - type: secret
+      secretRefName: another-secret-name
