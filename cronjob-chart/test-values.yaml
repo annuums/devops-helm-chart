@@ -135,8 +135,13 @@ cronjob:
       # cpu: 250m
       # memory: 128Mi
       resources:
-        cpu: 250m
-        memory: 256Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+          ephemeral-storage: 1Gi
+        limits:
+          memory: 512Mi
+          ephemeral-storage: 2Gi
     - image:
         repository: first-rep
         tag: 1.0.0

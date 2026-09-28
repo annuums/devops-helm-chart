@@ -156,22 +156,7 @@ spec:
                   readOnly: {{ .readOnly }}
               {{- end }}
               {{- end }}
-              resources:
-              {{- if .resources }}
-                requests:
-                  cpu: {{ .resources.cpu }}
-                  memory: {{ .resources.memory }}
-                limits:
-                  cpu: {{ .resources.cpu }}
-                  memory: {{ .resources.memory }}
-              {{- else }}
-                requests:
-                  cpu: 250m
-                  memory: 128Mi
-                limits:
-                  cpu: 250m
-                  memory: 128Mi
-              {{- end }}
+              {{- include "annuums-cronjob.resources" (dict "path" (printf "initContainers[%s].resources" .name) "resources" .resources) | nindent 14 }}
             {{- end }}
           {{- end }}
           containers:
@@ -243,22 +228,7 @@ spec:
                   readOnly: {{ .readOnly }}
               {{- end }}
               {{- end }}
-              resources:
-              {{- if $container.resources }}
-                requests:
-                  cpu: {{ $container.resources.cpu }}
-                  memory: {{ $container.resources.memory }}
-                limits:
-                  cpu: {{ $container.resources.cpu }}
-                  memory: {{ $container.resources.memory }}
-              {{- else }}
-                requests:
-                  cpu: 250m
-                  memory: 128Mi
-                limits:
-                  cpu: 250m
-                  memory: 128Mi
-              {{- end }}
+              {{- include "annuums-cronjob.resources" (dict "path" (printf "cronjob.containers[%s].resources" $container.name) "resources" $container.resources) | nindent 14 }}
             {{- end }}
           {{- end }}
           {{- with .Values.volumes }}
